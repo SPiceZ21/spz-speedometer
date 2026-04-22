@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPiceZ Speedometer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app" style="display: none;">
+        <div class="speedo-container">
+            <!-- RPM Bar -->
+            <div class="rpm-bar-container" id="rpm-bar">
+                <!-- Segments will be generated here -->
+            </div>
+
+            <div class="main-stats">
+                <!-- Gear Box -->
+                <div class="gear-container">
+                    <span id="gear-val">1</span>
+                </div>
+
+                <!-- Speed Display -->
+                <div class="speed-container">
+                    <span id="speed-val">0</span>
+                </div>
+            </div>
+
+            <!-- Assists / Status Indicators -->
+            <div class="status-indicators">
+                <div class="indicator" id="ind-tcs">TSC</div>
+                <div class="indicator" id="ind-abs">ABS</div>
+                <div class="indicator" id="ind-esc">ESC</div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

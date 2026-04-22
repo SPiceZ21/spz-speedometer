@@ -17,12 +17,20 @@ Citizen.CreateThread(function()
             end
 
             -- Get Data from spz-physics
-            local rpm = exports["spz-physics"]:GetCurrentRPM()
-            local rpmData = exports["spz-physics"]:GetMinMaxRPM()
-            local telemetry = exports["spz-physics"]:GetTelemetry()
-            
-            -- Fallback for max RPM if physics not ready
-            local maxRpm = rpmData.max or 7000
+            local rpm = 0
+            local maxRpm = 7000
+            local assists = { tcs = false, abs = false, esc = false }
+
+            pcall(function()
+                rpm = exports["spz-physics"]:GetCurrentRPM() or 0
+                local rpmData = exports["spz-physics"]:GetMinMaxRPM() or {}
+                maxRpm = rpmData.max or 7000
+                
+                local telemetry = exports["spz-physics"]:GetTelemetry() or {}
+                assists.tcs = telemetry.tcs_active or false
+                assists.abs = telemetry.abs_active or false
+                assists.esc = telemetry.esc_active or false
+            end)
             
             -- Speed in KM/H
             local speed = math.floor(GetEntitySpeed(vehicle) * 3.6)
@@ -37,11 +45,7 @@ Citizen.CreateThread(function()
                 gear = gear,
                 rpm = rpm,
                 maxRpm = maxRpm,
-                assists = {
-                    tcs = telemetry.tcs_active or false,
-                    abs = telemetry.abs_active or false,
-                    esc = telemetry.esc_active or false
-                }
+                assists = assists
             })
         else
             if isVisible then

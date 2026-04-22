@@ -18,12 +18,10 @@ window.addEventListener('message', function(event) {
         document.getElementById('speed-val').innerText = data.speed;
 
         // Update Gear
-        document.getElementById('gear-val').innerText = data.gear === 0 ? 'R' : (data.gear === 1 and data.speed === 0 ? 'N' : data.gear);
-        // Wait, GTA gear 0 is reverse, 1 is first? No, 0 is reverse, 1 is neutral, 2 is first...
-        // Actually: 0 = R, 1 = N (sometimes), 2 = 1st...
-        // Let's use simpler logic: 0 = R, 1+ = Gear
         let gearDisplay = data.gear;
-        if (gearDisplay === 0) gearDisplay = 'R';
+        if (gearDisplay === 0) {
+            gearDisplay = 'R';
+        }
         document.getElementById('gear-val').innerText = gearDisplay;
 
         // Update RPM Bar

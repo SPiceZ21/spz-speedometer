@@ -1,4 +1,4 @@
-const SEGMENT_COUNT = 15;
+const SEGMENT_COUNT = 40;
 const rpmContainer = document.getElementById('rpm-bar');
 const segments = [];
 

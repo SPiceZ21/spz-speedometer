@@ -33,20 +33,15 @@
                 <div class="indicator" id="ind-esc">ESC</div>
             </div>
 
-            <!-- NOS & Purge Bars -->
-            <div class="nos-purge-container" id="nos-ui" style="display: none;">
-                <div class="flow-rate-indicator">FLOW: <span id="flow-val">1.0</span></div>
-                <div class="nos-bar-wrapper">
-                    <div class="bar-label">NOS</div>
-                    <div class="bar-bg">
-                        <div id="nos-bar" class="bar-fill"></div>
-                    </div>
+            <!-- NOS Consolidated HUD -->
+            <div class="nos-status-container" id="nos-ui" style="display: none;">
+                <div class="nos-info">
+                    <span id="nos-mode-text">NITRO</span>
+                    <span id="nos-flow-text">x1.0</span>
                 </div>
-                <div class="nos-bar-wrapper">
-                    <div class="bar-label">PURGE</div>
-                    <div class="bar-bg">
-                        <div id="purge-bar" class="bar-fill"></div>
-                    </div>
+                <div class="nos-bar-outer">
+                    <div id="nos-bar-fill" class="nos-bar-fill"></div>
+                    <div class="nos-bar-glow"></div>
                 </div>
             </div>
         </div>

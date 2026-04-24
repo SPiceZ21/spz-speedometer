@@ -42,16 +42,29 @@ window.addEventListener('message', function(event) {
         toggleIndicator('ind-abs', data.assists.abs);
         toggleIndicator('ind-esc', data.assists.esc);
 
-        // Update NOS & Purge
+        // Update NOS Consolidated HUD
         const nosUI = document.getElementById('nos-ui');
         if (data.nos && data.nos.hasNitro) {
             nosUI.style.display = 'flex';
-            document.getElementById('nos-bar').style.width = data.nos.level + '%';
-            document.getElementById('purge-bar').style.width = data.nos.purgeLevel + '%';
-            document.getElementById('flow-val').innerText = data.nos.flowRate.toFixed(1);
             
-            const flowLabel = nosUI.querySelector('.flow-rate-indicator');
-            flowLabel.innerHTML = (data.nos.mode === 'nitro' ? 'BOOST' : 'PURGE') + ': <span id="flow-val">' + data.nos.flowRate.toFixed(1) + '</span>';
+            const fill = document.getElementById('nos-bar-fill');
+            const modeText = document.getElementById('nos-mode-text');
+            const flowText = document.getElementById('nos-flow-text');
+            
+            // Update percentage
+            fill.style.width = data.nos.level + '%';
+            flowText.innerText = 'x' + data.nos.flowRate.toFixed(1);
+            
+            // Toggle classes based on mode
+            if (data.nos.mode === 'nitro') {
+                modeText.innerText = 'NITRO';
+                modeText.classList.remove('purge');
+                fill.classList.remove('purge');
+            } else {
+                modeText.innerText = 'PURGE';
+                modeText.classList.add('purge');
+                fill.classList.add('purge');
+            }
         } else {
             nosUI.style.display = 'none';
         }

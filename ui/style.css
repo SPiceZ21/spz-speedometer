@@ -139,3 +139,54 @@ body {
     box-shadow: 0 0 15px var(--accent-glow);
     border-color: var(--accent);
 }
+
+/* NOS & Purge Bars */
+.nos-purge-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    transform: skew(10deg);
+}
+
+.flow-rate-indicator {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.nos-bar-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.bar-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    width: 45px;
+}
+
+.bar-bg {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+    transition: width 0.3s ease;
+}
+
+#purge-bar {
+    background: #00d4ff;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+}

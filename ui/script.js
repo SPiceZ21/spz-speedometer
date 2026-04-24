@@ -41,6 +41,20 @@ window.addEventListener('message', function(event) {
         toggleIndicator('ind-tcs', data.assists.tcs);
         toggleIndicator('ind-abs', data.assists.abs);
         toggleIndicator('ind-esc', data.assists.esc);
+
+        // Update NOS & Purge
+        const nosUI = document.getElementById('nos-ui');
+        if (data.nos && data.nos.hasNitro) {
+            nosUI.style.display = 'flex';
+            document.getElementById('nos-bar').style.width = data.nos.level + '%';
+            document.getElementById('purge-bar').style.width = data.nos.purgeLevel + '%';
+            document.getElementById('flow-val').innerText = data.nos.flowRate.toFixed(1);
+            
+            const flowLabel = nosUI.querySelector('.flow-rate-indicator');
+            flowLabel.innerHTML = (data.nos.mode === 'nitro' ? 'BOOST' : 'PURGE') + ': <span id="flow-val">' + data.nos.flowRate.toFixed(1) + '</span>';
+        } else {
+            nosUI.style.display = 'none';
+        }
     } else if (data.type === 'show') {
         document.getElementById('app').style.display = 'flex';
     } else if (data.type === 'hide') {

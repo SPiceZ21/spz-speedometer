@@ -38,6 +38,12 @@ Citizen.CreateThread(function()
             -- Gear
             local gear = GetVehicleCurrentGear(vehicle)
 
+            -- Get NOS data
+            local nosData = nil
+            pcall(function()
+                nosData = exports["spz-nos"]:GetNosData()
+            end)
+
             -- Send to NUI
             SendNUIMessage({
                 type = 'update',
@@ -45,7 +51,8 @@ Citizen.CreateThread(function()
                 gear = gear,
                 rpm = rpm,
                 maxRpm = maxRpm,
-                assists = assists
+                assists = assists,
+                nos = nosData
             })
         else
             if isVisible then

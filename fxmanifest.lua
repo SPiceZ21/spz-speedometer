@@ -14,10 +14,7 @@ client_scripts {
 
 files {
     'ui/index.html',
-    'ui/style.css',
-    'ui/script.js',
-    'ui/public/fonts/Panchang-Bold.ttf',
-    'ui/public/fonts/Panchang-Regular.ttf'
+    'ui/public/fonts/Panchang-Variable.ttf',
 }
 
 dependencies {

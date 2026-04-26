@@ -1,51 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPiceZ Speedometer</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPZ · Speedometer</title>
+<link rel="stylesheet" href="../../spz-ui/components/styles/spz-ui.css">
+<link href="https://fonts.cdnfonts.com/css/panchang" rel="stylesheet">
+<style>
+  :root { --panchang: 'Panchang', sans-serif; }
+  html, body { width: 100vw; height: 100vh; overflow: hidden; background: transparent; font-family: var(--spz-font-body); }
+  
+  .hud-wrap { position: fixed; bottom: 5vh; right: 4vw; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }
+  
+  /* Slanted Racing Container */
+  .speedo-container {
+    width: 320px; display: flex; flex-direction: column; gap: 10px;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.6));
+    transform: skew(-12deg);
+  }
+  
+  /* RPM Bar */
+  .rpm-bar { display: flex; gap: 2px; height: 20px; }
+  .rpm-seg { 
+    flex: 1; background: rgba(255,255,255,0.06); 
+    clip-path: polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%);
+    transition: background 80ms;
+  }
+  .rpm-seg[data-active="true"] { background: var(--spz-orange); box-shadow: 0 0 12px rgba(255,98,0,0.4); }
+  .rpm-seg[data-current="true"] { background: #fff; box-shadow: 0 0 16px rgba(255,255,255,0.8); }
+
+  /* Stats Row */
+  .stats-row { display: flex; align-items: flex-end; gap: 16px; transform: skew(12deg); }
+  .gear-box { 
+    width: 64px; height: 72px; background: var(--spz-orange); display: flex; align-items: center; justify-content: center;
+    border-radius: 3px; box-shadow: var(--spz-shadow-glow-soft);
+  }
+  .gear-val { font-family: var(--panchang); font-weight: 800; font-size: 42px; color: #0a0a0a; line-height: 1; }
+  
+  .speed-box { display: flex; align-items: baseline; gap: 4px; }
+  .speed-val { font-family: var(--panchang); font-weight: 800; font-size: 72px; color: var(--spz-fg-1); line-height: 0.8; letter-spacing: -2px; }
+  .speed-unit { font-family: var(--spz-font-mono); font-size: 14px; font-weight: 700; color: var(--spz-fg-3); text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* Indicators */
+  .ind-row { display: flex; gap: 6px; transform: skew(12deg); }
+  .ind-chip { 
+    padding: 2px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--spz-line); 
+    border-radius: 4px; font-family: var(--spz-font-mono); font-size: 10px; font-weight: 700; color: var(--spz-fg-4);
+    transition: all 150ms;
+  }
+  .ind-chip[data-active="true"] { background: var(--spz-orange); color: #0a0a0a; border-color: var(--spz-orange); }
+
+  /* NOS Hud */
+  .nos-box { 
+    width: 100%; display: flex; flex-direction: column; gap: 6px; transform: skew(12deg); margin-top: 4px;
+    animation: spz-in 400ms var(--spz-ease-out);
+  }
+  .nos-header { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
+  .nos-label { font-family: var(--spz-font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--spz-orange); }
+  .nos-label[data-mode="purge"] { color: var(--spz-info); }
+  .nos-flow { font-family: var(--spz-font-mono); font-size: 10px; color: var(--spz-fg-3); background: var(--spz-surface-3); padding: 1px 6px; border-radius: 3px; }
+  
+  .nos-bar { height: 6px; background: var(--spz-surface-3); border-radius: 3px; overflow: hidden; border: 1px solid var(--spz-line); }
+  .nos-fill { height: 100%; background: var(--spz-orange); box-shadow: 0 0 12px rgba(255,98,0,0.3); transition: width 300ms var(--spz-ease-out); }
+  .nos-fill[data-mode="purge"] { background: var(--spz-info); box-shadow: 0 0 12px rgba(77,168,255,0.3); }
+
+</style>
 </head>
 <body>
-    <div id="app" style="display: none;">
-        <div class="speedo-container">
-            <!-- RPM Bar -->
-            <div class="rpm-bar-container" id="rpm-bar">
-                <!-- Segments will be generated here -->
-            </div>
+<div id="root"></div>
 
-            <div class="main-stats">
-                <!-- Gear Box -->
-                <div class="gear-container">
-                    <span id="gear-val">1</span>
-                </div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
 
-                <!-- Speed Display -->
-                <div class="speed-container">
-                    <span id="speed-val">0</span>
-                </div>
-            </div>
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
 
-            <!-- Assists / Status Indicators -->
-            <div class="status-indicators">
-                <div class="indicator" id="ind-tcs">TSC</div>
-                <div class="indicator" id="ind-abs">ABS</div>
-                <div class="indicator" id="ind-esc">ESC</div>
-            </div>
+const SEGMENTS = 40;
 
-            <!-- NOS Consolidated HUD -->
-            <div class="nos-status-container" id="nos-ui" style="display: none;">
-                <div class="nos-info">
-                    <span id="nos-mode-text">NITRO</span>
-                    <span id="nos-flow-text">x1.0</span>
-                </div>
-                <div class="nos-bar-outer">
-                    <div id="nos-bar-fill" class="nos-bar-fill"></div>
-                    <div class="nos-bar-glow"></div>
-                </div>
-            </div>
+function App() {
+  const [visible, setVisible] = useState(false);
+  const [data, setData] = useState({
+    speed: 0, gear: 1, rpm: 0, maxRpm: 8000,
+    assists: { tcs: false, abs: false, esc: false },
+    nos: { hasNitro: false, level: 0, flowRate: 1.0, mode: 'nitro' }
+  });
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data.type === 'update') {
+        setData(e.data);
+      } else if (e.data.type === 'show') {
+        setVisible(true);
+      } else if (e.data.type === 'hide') {
+        setVisible(false);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const activeSegments = useMemo(() => {
+    const pct = data.rpm / (data.maxRpm || 8000);
+    return Math.floor(pct * SEGMENTS);
+  }, [data.rpm, data.maxRpm]);
+
+  if (!visible) return null;
+
+  const gear = data.gear === 0 ? 'R' : data.gear;
+
+  return (
+    <div className="hud-wrap">
+      <div className="speedo-container">
+        {/* RPM Bar */}
+        <div className="rpm-bar">
+          {Array.from({ length: SEGMENTS }).map((_, i) => (
+            <div 
+              key={i} 
+              className="rpm-seg" 
+              data-active={i < activeSegments} 
+              data-current={i === activeSegments && activeSegments < SEGMENTS}
+            />
+          ))}
         </div>
+
+        {/* Stats Row */}
+        <div className="stats-row">
+          <div className="gear-box">
+            <span className="gear-val">{gear}</span>
+          </div>
+          <div className="speed-box">
+            <span className="speed-val">{data.speed}</span>
+            <span className="speed-unit">KM/H</span>
+          </div>
+        </div>
+
+        {/* Indicators */}
+        <div className="ind-row">
+          <div className="ind-chip" data-active={data.assists.tcs}>TCS</div>
+          <div className="ind-chip" data-active={data.assists.abs}>ABS</div>
+          <div className="ind-chip" data-active={data.assists.esc}>ESC</div>
+        </div>
+
+        {/* NOS Hud */}
+        {data.nos?.hasNitro && (
+          <div className="nos-box">
+            <div className="nos-header">
+              <span className="nos-label" data-mode={data.nos.mode}>
+                {data.nos.mode === 'nitro' ? 'NITROGEN-S' : 'PURGE ACTIVE'}
+              </span>
+              <span className="nos-flow">x{data.nos.flowRate?.toFixed(1)}</span>
+            </div>
+            <div className="nos-bar">
+              <div className="nos-fill" data-mode={data.nos.mode} style={{ width: `${data.nos.level}%` }} />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-    <script src="script.js"></script>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
 </body>
 </html>

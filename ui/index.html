@@ -6,52 +6,100 @@
 <title>SPZ · Speedometer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 @font-face { font-family: 'Panchang'; src: url('public/fonts/Panchang-Variable.ttf') format('truetype'); font-weight: 100 900; }
 
+/* ── TOKENS (matches spz-ui canonical) ──────────────────────── */
 :root {
-  --spz-fg-1: #FFFFFF;
-  --spz-fg-3: #A8AEBB;
-  --spz-fg-4: #5C6370;
-  --spz-orange: #FFFFFF;
-  --spz-info: #FFFFFF;
-  --spz-surface-3: rgba(255,255,255,0.05);
-  --spz-line: rgba(255,255,255,0.1);
-  --spz-font-mono: 'JetBrains Mono', monospace;
-  --spz-shadow-glow-soft: 0 0 12px rgba(255,255,255,0.2);
-  --spz-ease-out: cubic-bezier(0,0,0.2,1);
+  --color-primary:  #FF6200;
+  --text-primary:   #FFFFFF;
+  --text-secondary: rgba(255,255,255,0.4);
+  --text-muted:     rgba(255,255,255,0.2);
+  --border-muted:   rgba(255,255,255,0.1);
+  --bg-glass:       rgba(255,255,255,0.05);
+  --font-display:   'Panchang', sans-serif;
+  --font-mono:      'JetBrains Mono', monospace;
+  --ease-out:       cubic-bezier(0,0,0.2,1);
 }
 
+/* ── RESET ──────────────────────────────────────────────────── */
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: transparent; -webkit-font-smoothing: antialiased; }
+html, body { margin:0; padding:0; width:100vw; height:100vh; overflow:hidden; background:transparent; -webkit-font-smoothing:antialiased; }
 
-.hud-wrap { position: fixed; bottom: 5vh; right: 4vw; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }
+/* ── HUD ROOT ───────────────────────────────────────────────── */
+.hud-wrap {
+  position: fixed; bottom: 5vh; right: 4vw;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+  pointer-events: none;
+}
 
-.speedo-container { width: 340px; display: flex; flex-direction: column; gap: 8px; filter: drop-shadow(0 8px 24px rgba(0,0,0,0.6)); transform: skew(-12deg); }
+/* ── SPEEDO SHELL (skewed container) ───────────────────────── */
+.speedo-container {
+  width: 340px;
+  display: flex; flex-direction: column; gap: 8px;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.6));
+  transform: skew(-12deg);
+}
 
+/* ── RPM BAR ────────────────────────────────────────────────── */
 .rpm-bar { display: flex; gap: 2px; height: 14px; margin-bottom: 2px; }
-.rpm-seg { flex: 1; background: rgba(255,255,255,0.06); clip-path: polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%); transition: background 80ms; }
-.rpm-seg[data-active="true"] { background: rgba(255,255,255,0.4); }
-.rpm-seg[data-current="true"] { background: #fff; box-shadow: 0 0 16px rgba(255,255,255,0.8); }
+.rpm-seg {
+  flex: 1;
+  background: var(--bg-glass);
+  clip-path: polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%);
+  transition: background 80ms;
+}
+.rpm-seg[data-active="true"]                          { background: rgba(255,255,255,0.35); }
+.rpm-seg[data-current="true"]                         { background: var(--text-primary); box-shadow: 0 0 16px rgba(255,255,255,0.8); }
+/* Orange zone: last 8 segments */
+.rpm-seg[data-redline="true"][data-active="true"]     { background: var(--color-primary); }
+.rpm-seg[data-redline="true"][data-current="true"]    { background: var(--color-primary); box-shadow: 0 0 16px rgba(255,98,0,0.9); }
 
+/* ── STATS ROW ──────────────────────────────────────────────── */
 .stats-row { display: flex; align-items: flex-end; gap: 16px; transform: skew(12deg); }
-.gear-box { width: 54px; height: 60px; background: rgba(255,255,255,0.05); border: 1px solid var(--spz-line); display: flex; align-items: center; justify-content: center; border-radius: 4px; }
-.gear-val { font-family: 'Panchang', sans-serif; font-weight: 800; font-size: 36px; color: #fff; line-height: 1; }
+
+.gear-box {
+  width: 54px; height: 60px;
+  background: var(--bg-glass); border: 1px solid var(--border-muted);
+  display: flex; align-items: center; justify-content: center; border-radius: 4px;
+}
+.gear-val {
+  font-family: var(--font-display); font-weight: 800; font-size: 36px;
+  color: var(--text-primary); line-height: 1;
+}
 
 .speed-box { display: flex; align-items: baseline; gap: 4px; }
-.speed-val { font-family: 'Panchang', sans-serif; font-weight: 800; font-size: 64px; color: #fff; line-height: 0.8; letter-spacing: -2px; }
-.speed-unit { font-family: var(--spz-font-mono); font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.1em; }
+.speed-val {
+  font-family: var(--font-display); font-weight: 800; font-size: 64px;
+  color: var(--text-primary); line-height: 0.8; letter-spacing: -2px;
+}
+.speed-unit {
+  font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+  color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.1em;
+}
 
-.bottom-row { display: flex; align-items: center; gap: 12px; transform: skew(12deg); margin-top: 4px; background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 4px; border: 1px solid var(--spz-line); }
+/* ── BOTTOM ROW ─────────────────────────────────────────────── */
+.bottom-row {
+  display: flex; align-items: center; gap: 12px;
+  transform: skew(12deg); margin-top: 4px;
+  background: rgba(0,0,0,0.2); padding: 6px 10px;
+  border-radius: 4px; border: 1px solid var(--border-muted);
+}
 
+/* ── ASSIST INDICATORS ──────────────────────────────────────── */
 .ind-group { display: flex; gap: 8px; }
-.ind-chip { font-family: var(--spz-font-mono); font-size: 9px; font-weight: 800; color: rgba(255,255,255,0.1); transition: all 150ms; }
-.ind-chip[data-active="true"] { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.5); }
+.ind-chip {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 800;
+  color: var(--text-muted); transition: all 150ms;
+}
+.ind-chip[data-active="true"] { color: var(--text-primary); text-shadow: 0 0 8px rgba(255,255,255,0.5); }
 
+/* ── NOS BAR ────────────────────────────────────────────────── */
 .nos-mini-wrap { flex: 1; display: flex; align-items: center; gap: 8px; }
-.nos-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
-.nos-fill { height: 100%; background: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.4); transition: width 300ms var(--spz-ease-out); }
+.nos-label     { font-family: var(--font-mono); font-size: 9px; font-weight: 700; color: var(--color-primary); letter-spacing: 0.08em; }
+.nos-bar       { flex: 1; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+.nos-fill      { height: 100%; background: var(--color-primary); box-shadow: 0 0 10px rgba(255,98,0,0.5); transition: width 300ms var(--ease-out); }
 </style>
 </head>
 <body>
@@ -66,21 +114,22 @@ html, body { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidde
 const { h, render } = preact;
 const { useState, useEffect, useMemo } = preactHooks;
 
-const SEGMENTS = 40;
+const SEGMENTS  = 40;
+const REDLINE   = 32; /* last 8 segments light orange */
 
 function App() {
   const [visible, setVisible] = useState(false);
   const [data, setData] = useState({
     speed: 0, gear: 1, rpm: 0, maxRpm: 8000,
     assists: { tcs: false, abs: false, esc: false },
-    nos: { hasNitro: false, level: 0, flowRate: 1.0, mode: 'nitro' }
+    nos: { hasNitro: false, level: 0, flowRate: 1.0, mode: 'nitro' },
   });
 
   useEffect(() => {
     const handler = (e) => {
-      if (e.data.type === 'update') setData(e.data);
-      else if (e.data.type === 'show') setVisible(true);
-      else if (e.data.type === 'hide') setVisible(false);
+      if      (e.data.type === 'update') setData(e.data);
+      else if (e.data.type === 'show')   setVisible(true);
+      else if (e.data.type === 'hide')   setVisible(false);
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
@@ -98,15 +147,21 @@ function App() {
   return (
     <div className="hud-wrap">
       <div className="speedo-container">
+
+        {/* RPM bar */}
         <div className="rpm-bar">
           {Array.from({ length: SEGMENTS }).map((_, i) => (
-            <div key={i} className="rpm-seg"
+            <div
+              key={i}
+              className="rpm-seg"
               data-active={i < activeSegments}
               data-current={i === activeSegments && activeSegments < SEGMENTS}
+              data-redline={i >= REDLINE}
             />
           ))}
         </div>
 
+        {/* Gear + speed */}
         <div className="stats-row">
           <div className="gear-box">
             <span className="gear-val">{gear}</span>
@@ -117,21 +172,24 @@ function App() {
           </div>
         </div>
 
+        {/* Assists + NOS */}
         <div className="bottom-row">
           <div className="ind-group">
             <span className="ind-chip" data-active={data.assists.abs}>ABS</span>
             <span className="ind-chip" data-active={data.assists.tcs}>TCS</span>
             <span className="ind-chip" data-active={data.assists.esc}>ESC</span>
           </div>
-          
+
           {data.nos?.hasNitro && (
             <div className="nos-mini-wrap">
+              <span className="nos-label">NOS</span>
               <div className="nos-bar">
                 <div className="nos-fill" style={{ width: `${data.nos.level}%` }} />
               </div>
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

@@ -3,18 +3,17 @@ game 'gta5'
 
 name 'spz-speedometer'
 description 'Premium Racing Speedometer with spz-physics integration'
-version '1.0.0'
+version '1.1.1'
 author 'SPiceZ-Core'
 
-ui_page 'ui/index.html'
+ui_page 'ui/dist/index.html'
 
 client_scripts {
     'client/main.lua'
 }
 
 files {
-    'ui/index.html',
-    'ui/public/fonts/Panchang-Variable.ttf',
+    'ui/dist/**/*',
 }
 
 dependencies {

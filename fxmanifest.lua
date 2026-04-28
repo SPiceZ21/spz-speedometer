@@ -1,4 +1,4 @@
-fx_version 'cerulean'
+﻿fx_version 'cerulean'
 game 'gta5'
 
 name 'spz-speedometer'
@@ -20,3 +20,4 @@ dependencies {
     'spz-lib',
     'spz-physics'
 }
+

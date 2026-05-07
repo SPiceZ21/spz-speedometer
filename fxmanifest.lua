@@ -18,6 +18,5 @@ files {
 
 dependencies {
     'spz-lib',
-    'spz-physics'
+    'spz-nos'
 }
-

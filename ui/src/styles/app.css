@@ -89,18 +89,22 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.ind-group { display: flex; gap: 8px; }
-.ind-chip {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.2);
-  transition: all 150ms;
+.dash-indicators {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-.ind-chip[data-active="true"] {
-  color: #fff;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+
+.ind-icon {
+  transition: all 200ms ease;
+  opacity: 0.2;
 }
+
+.active-green { color: #4ade80; filter: drop-shadow(0 0 5px rgba(74, 222, 128, 0.5)); opacity: 1 !important; }
+.active-blue  { color: #3b82f6; filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5)); opacity: 1 !important; }
+.active-red   { color: #ef4444; filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.5)); opacity: 1 !important; }
+.active-amber { color: #fbbf24; filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.5)); opacity: 1 !important; }
+.active-white { color: #ffffff; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5)); opacity: 1 !important; }
 
 .nos-mini-wrap { flex: 1; display: flex; align-items: center; gap: 8px; }
 .nos-label {

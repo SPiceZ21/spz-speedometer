@@ -22,6 +22,20 @@ Citizen.CreateThread(function()
             local gear = GetVehicleCurrentGear(vehicle)
             local speed = math.floor(GetEntitySpeed(vehicle) * 3.6)
 
+            -- Dashboard Indicators
+            local _, lights, highbeams = GetVehicleLightsState(vehicle)
+            local engineHealth = GetVehicleEngineHealth(vehicle)
+            
+            local status = {
+                leftBlinker = IsVehicleIndicatorLightsOn(vehicle, 0),
+                rightBlinker = IsVehicleIndicatorLightsOn(vehicle, 1),
+                lights = lights == 1,
+                highbeams = highbeams == 1,
+                engine = engineHealth < 600,
+                handbrake = GetVehicleHandbrake(vehicle),
+                locked = GetVehicleDoorLockStatus(vehicle) > 1
+            }
+
             -- Get NOS data
             local nosData = nil
             pcall(function()
@@ -35,6 +49,7 @@ Citizen.CreateThread(function()
                 gear = gear,
                 rpm = rpm,
                 maxRpm = maxRpm,
+                status = status,
                 nos = nosData
             })
         else

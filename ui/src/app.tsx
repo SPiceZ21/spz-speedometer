@@ -1,4 +1,12 @@
 import { useState, useEffect, useMemo } from 'preact/hooks'
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Lightbulb, 
+  Activity, 
+  Lock, 
+  ParkingCircle 
+} from 'lucide-preact'
 
 const SEGMENTS = 40
 const REDLINE = 32
@@ -8,6 +16,15 @@ interface SpeedoData {
   gear: number
   rpm: number
   maxRpm: number
+  status: {
+    leftBlinker: boolean;
+    rightBlinker: boolean;
+    lights: boolean;
+    highbeams: boolean;
+    engine: boolean;
+    handbrake: boolean;
+    locked: boolean;
+  }
   nos?: { hasNitro: boolean; level: number }
 }
 
@@ -15,7 +32,16 @@ const DEFAULT_DATA: SpeedoData = {
   speed: 0,
   gear: 1,
   rpm: 0,
-  maxRpm: 8000,
+  maxRpm: 1.0,
+  status: {
+    leftBlinker: false,
+    rightBlinker: false,
+    lights: false,
+    highbeams: false,
+    engine: false,
+    handbrake: false,
+    locked: false
+  },
   nos: { hasNitro: false, level: 0 },
 }
 
@@ -68,6 +94,32 @@ export function App() {
         </div>
 
         <div class="bottom-row">
+          <div class="dash-indicators">
+            <ChevronLeft 
+              size={20} 
+              class={`ind-icon ${data.status.leftBlinker ? 'active-green' : 'inactive'}`} 
+            />
+            <Lightbulb 
+              size={18} 
+              class={`ind-icon ${data.status.highbeams ? 'active-blue' : data.status.lights ? 'active-green' : 'inactive'}`} 
+            />
+            <ParkingCircle 
+              size={18} 
+              class={`ind-icon ${data.status.handbrake ? 'active-red' : 'inactive'}`} 
+            />
+            <Activity 
+              size={18} 
+              class={`ind-icon ${data.status.engine ? 'active-amber' : 'inactive'}`} 
+            />
+            <Lock 
+              size={16} 
+              class={`ind-icon ${data.status.locked ? 'active-white' : 'inactive'}`} 
+            />
+            <ChevronRight 
+              size={20} 
+              class={`ind-icon ${data.status.rightBlinker ? 'active-green' : 'inactive'}`} 
+            />
+          </div>
           {data.nos?.hasNitro && (
             <div class="nos-mini-wrap">
               <span class="nos-label">NOS</span>

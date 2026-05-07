@@ -16,27 +16,11 @@ Citizen.CreateThread(function()
                 SendNUIMessage({ type = 'show' })
             end
 
-            -- Get Data from spz-physics
-            local rpm = 0
-            local maxRpm = 7000
-            local assists = { tcs = false, abs = false, esc = false }
-
-            pcall(function()
-                rpm = exports["spz-physics"]:GetCurrentRPM() or 0
-                local rpmData = exports["spz-physics"]:GetMinMaxRPM() or {}
-                maxRpm = rpmData.max or 7000
-                
-                local telemetry = exports["spz-physics"]:GetTelemetry() or {}
-                assists.tcs = telemetry.tcs_active or false
-                assists.abs = telemetry.abs_active or false
-                assists.esc = telemetry.esc_active or false
-            end)
-            
-            -- Speed in KM/H
-            local speed = math.floor(GetEntitySpeed(vehicle) * 3.6)
-            
-            -- Gear
+            -- Native Data
+            local rpm = GetVehicleCurrentRpm(vehicle)
+            local maxRpm = 1.0
             local gear = GetVehicleCurrentGear(vehicle)
+            local speed = math.floor(GetEntitySpeed(vehicle) * 3.6)
 
             -- Get NOS data
             local nosData = nil
@@ -51,7 +35,6 @@ Citizen.CreateThread(function()
                 gear = gear,
                 rpm = rpm,
                 maxRpm = maxRpm,
-                assists = assists,
                 nos = nosData
             })
         else

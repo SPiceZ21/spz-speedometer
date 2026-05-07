@@ -8,7 +8,6 @@ interface SpeedoData {
   gear: number
   rpm: number
   maxRpm: number
-  assists: { tcs: boolean; abs: boolean; esc: boolean }
   nos?: { hasNitro: boolean; level: number }
 }
 
@@ -17,7 +16,6 @@ const DEFAULT_DATA: SpeedoData = {
   gear: 1,
   rpm: 0,
   maxRpm: 8000,
-  assists: { tcs: false, abs: false, esc: false },
   nos: { hasNitro: false, level: 0 },
 }
 
@@ -70,11 +68,6 @@ export function App() {
         </div>
 
         <div class="bottom-row">
-          <div class="ind-group">
-            <span class="ind-chip" data-active={data.assists.abs}>ABS</span>
-            <span class="ind-chip" data-active={data.assists.tcs}>TCS</span>
-            <span class="ind-chip" data-active={data.assists.esc}>ESC</span>
-          </div>
           {data.nos?.hasNitro && (
             <div class="nos-mini-wrap">
               <span class="nos-label">NOS</span>

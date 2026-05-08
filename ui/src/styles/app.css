@@ -113,11 +113,23 @@
   font-weight: 700;
   color: var(--color-primary);
   letter-spacing: 0.08em;
+  width: 40px;
 }
+.nos-mini-wrap[data-mode="purge"] .nos-label { color: #3b82f6; }
+
 .nos-bar { flex: 1; height: 4px; background: rgba(255, 255, 255, 0.05); border-radius: 2px; overflow: hidden; }
 .nos-fill {
   height: 100%;
   background: var(--color-primary);
   box-shadow: 0 0 10px rgba(255, 98, 0, 0.5);
   transition: width 300ms var(--anim-ease);
+}
+.nos-mini-wrap[data-mode="purge"] .nos-fill { background: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+
+.nos-flow {
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  opacity: 0.6;
 }

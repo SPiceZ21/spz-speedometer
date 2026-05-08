@@ -21,11 +21,15 @@ interface SpeedoData {
     rightBlinker: boolean;
     lights: boolean;
     highbeams: boolean;
-    engine: boolean;
     handbrake: boolean;
-    locked: boolean;
   }
-  nos?: { hasNitro: boolean; level: number }
+  nos?: { 
+    hasNitro: boolean; 
+    level: number;
+    mode: 'nitro' | 'purge';
+    flowRate: number;
+    isActive: boolean;
+  }
 }
 
 const DEFAULT_DATA: SpeedoData = {
@@ -38,11 +42,9 @@ const DEFAULT_DATA: SpeedoData = {
     rightBlinker: false,
     lights: false,
     highbeams: false,
-    engine: false,
     handbrake: false,
-    locked: false
   },
-  nos: { hasNitro: false, level: 0 },
+  nos: { hasNitro: false, level: 0, mode: 'nitro', flowRate: 1, isActive: false },
 }
 
 export function App() {
@@ -107,25 +109,18 @@ export function App() {
               size={18} 
               class={`ind-icon ${data.status.handbrake ? 'active-red' : 'inactive'}`} 
             />
-            <Activity 
-              size={18} 
-              class={`ind-icon ${data.status.engine ? 'active-amber' : 'inactive'}`} 
-            />
-            <Lock 
-              size={16} 
-              class={`ind-icon ${data.status.locked ? 'active-white' : 'inactive'}`} 
-            />
             <ChevronRight 
               size={20} 
               class={`ind-icon ${data.status.rightBlinker ? 'active-green' : 'inactive'}`} 
             />
           </div>
           {data.nos?.hasNitro && (
-            <div class="nos-mini-wrap">
-              <span class="nos-label">NOS</span>
+            <div class="nos-mini-wrap" data-mode={data.nos.mode}>
+              <span class="nos-label">{data.nos.mode.toUpperCase()}</span>
               <div class="nos-bar">
                 <div class="nos-fill" style={{ width: `${data.nos.level}%` }} />
               </div>
+              <span class="nos-flow">x{Math.floor(data.nos.flowRate)}</span>
             </div>
           )}
         </div>

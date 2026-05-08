@@ -24,16 +24,13 @@ Citizen.CreateThread(function()
 
             -- Dashboard Indicators
             local _, lights, highbeams = GetVehicleLightsState(vehicle)
-            local engineHealth = GetVehicleEngineHealth(vehicle)
-            
+            local blinkers = GetVehicleIndicatorLights(vehicle)
             local status = {
-                leftBlinker = IsVehicleIndicatorLightsOn(vehicle, 0),
-                rightBlinker = IsVehicleIndicatorLightsOn(vehicle, 1),
+                leftBlinker = (blinkers == 1 or blinkers == 3),
+                rightBlinker = (blinkers == 2 or blinkers == 3),
                 lights = lights == 1,
                 highbeams = highbeams == 1,
-                engine = engineHealth < 600,
                 handbrake = GetVehicleHandbrake(vehicle),
-                locked = GetVehicleDoorLockStatus(vehicle) > 1
             }
 
             -- Get NOS data

@@ -1,37 +1,32 @@
-<div align="center">
-
-<img src="https://github.com/SPiceZ21/spz-core-media-kit/raw/main/Banner/Banner%232.png" alt="SPiceZ-Core Banner" width="100%"/>
-
-<br/>
-
 # spz-speedometer
-> Premium Racing Speedometer with spz-physics integration · `v1.1.1`
 
-## Scripts
+> Speedometer HUD · `v1.1.2`
 
-| Side   | File              | Purpose                                             |
-| ------ | ----------------- | --------------------------------------------------- |
-| Client | `client/main.lua` | Physics data polling, NUI bridge, display updates   |
+## Overview
+
+`spz-speedometer` renders speed, gear, RPM and nitrous state. It pulls simulated
+powertrain data from [spz-physics](../spz-physics/README.md) when that resource is running
+and falls back to native vehicle values otherwise; nitrous state comes from
+[spz-nos](../spz-nos/README.md).
+
+## Structure
+
+| Side | File | Purpose |
+|---|---|---|
+| Client | `client/main.lua` | Data polling, NUI bridge, display updates |
 
 ## NUI
 
-**Stack:** Vite · Preact · TypeScript · spz-ui
+Vite · Preact · TypeScript on the [spz-ui](../spz-ui/README.md) component set.
 
+```bash
+cd ui && npm install && npm run build   # → ui/dist/index.html
 ```
-ui/
-├── src/
-│   ├── app.tsx
-│   ├── components/       # spz-ui components
-│   └── styles/
-└── dist/                 # built output (served by FiveM)
-    └── index.html
-```
-
-Build: `cd ui && npm run build`
 
 ## Dependencies
-- ox_lib
-- spz-physics
 
-## CI
-Built and released via `.github/workflows/release.yml` on push to `main`.
+`ox_lib` · `spz-nos`. Optional: `spz-physics` for simulated gear and RPM.
+
+---
+
+Part of [SPiceZ-Core](../README.md) · GPL-3.0

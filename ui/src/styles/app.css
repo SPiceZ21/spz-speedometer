@@ -8,8 +8,8 @@
   align-items: flex-end;
   gap: 12px;
   pointer-events: none;
-  /* Overall size only — uniform shrink toward the anchored corner. */
-  transform: scale(0.8);
+  /* Overall size only — uniform scale toward the anchored corner. */
+  transform: scale(1.0);
   transform-origin: bottom right;
 }
 

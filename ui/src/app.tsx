@@ -23,13 +23,6 @@ interface SpeedoData {
     highbeams: boolean;
     handbrake: boolean;
   }
-  nos?: { 
-    hasNitro: boolean; 
-    level: number;
-    mode: 'nitro' | 'purge';
-    flowRate: number;
-    isActive: boolean;
-  }
 }
 
 const DEFAULT_DATA: SpeedoData = {
@@ -44,7 +37,6 @@ const DEFAULT_DATA: SpeedoData = {
     highbeams: false,
     handbrake: false,
   },
-  nos: { hasNitro: false, level: 0, mode: 'nitro', flowRate: 1, isActive: false },
 }
 
 export function App() {
@@ -114,15 +106,6 @@ export function App() {
               class={`ind-icon ${data.status.rightBlinker ? 'active-green' : 'inactive'}`} 
             />
           </div>
-          {data.nos?.hasNitro && (
-            <div class="nos-mini-wrap" data-mode={data.nos.mode}>
-              <span class="nos-label">{data.nos.mode.toUpperCase()}</span>
-              <div class="nos-bar">
-                <div class="nos-fill" style={{ width: `${data.nos.level}%` }} />
-              </div>
-              <span class="nos-flow">x{Math.floor(data.nos.flowRate)}</span>
-            </div>
-          )}
         </div>
       </div>
     </div>

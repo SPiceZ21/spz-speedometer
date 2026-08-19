@@ -33,12 +33,6 @@ Citizen.CreateThread(function()
                 handbrake = GetVehicleHandbrake(vehicle),
             }
 
-            -- Get NOS data
-            local nosData = nil
-            pcall(function()
-                nosData = exports["spz-nos"]:GetNosData()
-            end)
-
             -- Send to NUI
             SendNUIMessage({
                 type = 'update',
@@ -47,7 +41,6 @@ Citizen.CreateThread(function()
                 rpm = rpm,
                 maxRpm = maxRpm,
                 status = status,
-                nos = nosData
             })
         else
             if isVisible then

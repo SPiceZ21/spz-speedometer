@@ -18,5 +18,4 @@ files {
 
 dependencies {
     'ox_lib',
-    'spz-nos'
 }

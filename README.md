@@ -6,8 +6,7 @@
 
 `spz-speedometer` renders speed, gear, RPM and nitrous state. It pulls simulated
 powertrain data from [spz-physics](../spz-physics/README.md) when that resource is running
-and falls back to native vehicle values otherwise; nitrous state comes from
-[spz-nos](../spz-nos/README.md).
+and falls back to native vehicle values otherwise; nitrous state comes from.
 
 ## Structure
 
@@ -25,7 +24,7 @@ cd ui && npm install && npm run build   # → ui/dist/index.html
 
 ## Dependencies
 
-`ox_lib` · `spz-nos`. Optional: `spz-physics` for simulated gear and RPM.
+`ox_lib`. Optional: `spz-physics` for simulated gear and RPM.
 
 ---
 

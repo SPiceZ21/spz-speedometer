@@ -53,14 +53,39 @@
 /* Past the redline the fill turns red. */
 .rpm-track[data-red="true"] .rpm-fill { background: #ff3c28; }
 
-/* Fixed tick showing where the red starts. */
-.rpm-redline {
+/* Bouncing off the limiter — a hard flash, faster than the redline glow,
+   so a held limiter reads as distinct from just sitting in the red. */
+.rpm-track[data-limiter="true"] .rpm-fill { animation: rpm-limiter-flash 90ms steps(1) infinite; }
+@keyframes rpm-limiter-flash {
+  50% { background: #fff; }
+}
+
+/* Mid gear-change power cut — a single quick blip on the whole track. */
+.rpm-track[data-shifting="true"] { animation: rpm-shift-flash 120ms ease-out; }
+@keyframes rpm-shift-flash {
+  0% { background: rgba(255, 255, 255, 0.35); }
+  100% { background: rgba(255, 255, 255, 0.08); }
+}
+
+/* ── Boost / spool ────────────────────────────────────────────
+   Same flat-track language as the rev counter, only shown once a
+   turbo car actually has boost to show. */
+.boost-track {
+  position: relative;
+  width: 100%;
+  height: 5px;
+  margin-top: -2px;
+  margin-bottom: 4px;
+  border-radius: 2px;
+  transform: skew(12deg) translateX(-10px);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.boost-fill {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  transform: translateX(-1px);
-  background: rgba(255, 60, 40, 0.85);
+  inset: 0 auto 0 0;
+  background: #29d1ff;
+  transition: width 70ms linear;
 }
 
 /* Stats */
@@ -71,7 +96,30 @@
   transform: skew(12deg);
 }
 
+/* ── Dashboard indicators ─────────────────────────────────────
+   Blinkers, beams, handbrake — computed client-side every tick but
+   previously dropped on the floor before reaching the UI. Dim when
+   off, lit (and blinking, for the arrows) when active. */
+.indicators {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-bottom: 6px;
+}
+.ind {
+  font-size: 11px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.15);
+  transition: color 100ms linear;
+}
+.ind.dim { color: rgba(255, 255, 255, 0.4); }
+.ind.on { color: var(--color-primary); }
+.ind-arrow.on { animation: ind-blink 600ms steps(1) infinite; }
+.ind-handbrake.on { color: #ff3c28; }
+@keyframes ind-blink { 50% { opacity: 0.15; } }
+
 .gear-box {
+  position: relative;
   width: 54px;
   height: 60px;
   background: rgba(255, 255, 255, 0.05);
@@ -80,7 +128,10 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
+  transition: border-color 120ms linear;
 }
+.gear-box[data-launch="true"] { border-color: #2bff8c; }
+.gear-box[data-tcs-cut="true"] { border-color: #ffd12b; }
 .gear-val {
   font-family: var(--font-primary);
   font-weight: 800;
@@ -88,6 +139,21 @@
   color: #fff;
   line-height: 1;
 }
+.gear-flag {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: #2bff8c;
+  color: #000;
+}
+.gear-box[data-tcs-cut="true"] .gear-flag { background: #ffd12b; }
 
 .speed-box { display: flex; align-items: baseline; gap: 4px; }
 .speed-val {

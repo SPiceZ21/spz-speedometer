@@ -1,20 +1,46 @@
-import { useState, useEffect, useMemo } from 'preact/hooks'
+import { useState, useEffect } from 'preact/hooks'
 
-const SEGMENTS = 40
-const REDLINE = 32
+interface DashStatus {
+  leftBlinker: boolean
+  rightBlinker: boolean
+  lights: boolean
+  highbeams: boolean
+  handbrake: boolean
+}
 
 interface SpeedoData {
   speed: number
-  gear: number
-  rpm: number
-  maxRpm: number
+  gear: number | string
+  pct: number        // 0..100 across the rev range — computed client-Lua side,
+                      // sourced from spz-physics when it's driving this car.
+  inRedline: boolean
+  shifting: boolean   // mid gear-change power cut
+  limiter: boolean    // bouncing off the rev limiter
+  launch: boolean     // launch control holding revs
+  tcsCut: boolean      // traction control actively cutting power this frame
+  boost: number       // 0..1 forced-induction spool, 0 on non-turbo cars
+  status: DashStatus
+}
+
+const DEFAULT_STATUS: DashStatus = {
+  leftBlinker: false,
+  rightBlinker: false,
+  lights: false,
+  highbeams: false,
+  handbrake: false,
 }
 
 const DEFAULT_DATA: SpeedoData = {
   speed: 0,
   gear: 1,
-  rpm: 0,
-  maxRpm: 1.0,
+  pct: 0,
+  inRedline: false,
+  shifting: false,
+  limiter: false,
+  launch: false,
+  tcsCut: false,
+  boost: 0,
+  status: DEFAULT_STATUS,
 }
 
 export function App() {
@@ -23,7 +49,7 @@ export function App() {
 
   useEffect(() => {
     const handler = (e: MessageEvent) => {
-      if (e.data.type === 'update') setData(e.data)
+      if (e.data.type === 'update') setData({ ...DEFAULT_DATA, ...e.data, status: { ...DEFAULT_STATUS, ...e.data.status } })
       else if (e.data.type === 'show') setVisible(true)
       else if (e.data.type === 'hide') setVisible(false)
     }
@@ -31,33 +57,37 @@ export function App() {
     return () => window.removeEventListener('message', handler)
   }, [])
 
-  // 0..100 across the whole rev range, plus whether we are into the red.
-  const rpmPct = useMemo(() => {
-    const pct = (data.rpm / (data.maxRpm || 1)) * 100
-    return Math.max(0, Math.min(100, isFinite(pct) ? pct : 0))
-  }, [data.rpm, data.maxRpm])
-
-  const redlinePct = (REDLINE / SEGMENTS) * 100
-  const inRedline = rpmPct >= redlinePct
-
   if (!visible) return null
 
-  const gearDisplay = data.gear === 0 ? 'R' : data.gear
+  const { status } = data
 
   return (
     <div class="hud-wrap">
       <div class="speedo-container">
         {/* Rev counter as a continuous progress track, matching the checkpoint
             bar in the race HUD so the two read as the same instrument family. */}
-        <div class="rpm-track" data-red={inRedline}>
-          <div class="rpm-fill" style={{ width: `${rpmPct}%` }} />
-          {/* Where the red starts — fixed marker, not part of the fill. */}
-          <div class="rpm-redline" style={{ left: `${redlinePct}%` }} />
+        <div class="rpm-track" data-red={data.inRedline} data-limiter={data.limiter} data-shifting={data.shifting}>
+          <div class="rpm-fill" style={{ width: `${data.pct}%` }} />
         </div>
 
+        {data.boost > 0.02 && (
+          <div class="boost-track">
+            <div class="boost-fill" style={{ width: `${data.boost * 100}%` }} />
+          </div>
+        )}
+
         <div class="stats-row">
-          <div class="gear-box">
-            <span class="gear-val">{gearDisplay}</span>
+          <div class="indicators">
+            <span class={`ind ind-arrow ind-left ${status.leftBlinker ? 'on' : ''}`}>◀</span>
+            <span class={`ind ind-beam ${status.highbeams ? 'on' : status.lights ? 'dim' : ''}`}>▲</span>
+            <span class={`ind ind-handbrake ${status.handbrake ? 'on' : ''}`}>P</span>
+            <span class={`ind ind-arrow ind-right ${status.rightBlinker ? 'on' : ''}`}>▶</span>
+          </div>
+
+          <div class="gear-box" data-launch={data.launch} data-tcs-cut={data.tcsCut}>
+            <span class="gear-val">{data.gear}</span>
+            {data.launch && <span class="gear-flag">LC</span>}
+            {data.tcsCut && !data.launch && <span class="gear-flag">TCS</span>}
           </div>
           <div class="speed-box">
             <span class="speed-val">{data.speed}</span>

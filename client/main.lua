@@ -13,6 +13,7 @@ local function getRpmInfo(vehicle)
         local ok, p = pcall(function() return exports['spz-physics']:GetPhysicsState() end)
         if ok and p and p.active then
             local pct = (p.band or 0) * 100
+            if type(pct) ~= 'number' or pct ~= pct or pct == math.huge or pct == -math.huge then pct = 0 end
             if pct < 0 then pct = 0 elseif pct > 100 then pct = 100 end
             return {
                 gear      = p.reverse and 'R' or p.gear,
@@ -50,6 +51,21 @@ AddEventHandler('onResourceStop', function(res)
     if res == 'spz-physics' then hasPhysics = false end
 end)
 CreateThread(function() hasPhysics = GetResourceState('spz-physics') == 'started' end)
+
+-- Base theme (server.cfg spz_theme_* convars via spz-core). Pushed once at
+-- start and again on live /spz reloadtheme.
+local function pushTheme(theme)
+    if theme and next(theme) then
+        SendNUIMessage({ type = 'theme', theme = theme })
+    end
+end
+
+CreateThread(function()
+    local ok, theme = pcall(function() return exports['spz-core']:GetTheme() end)
+    if ok then pushTheme(theme) end
+end)
+
+AddEventHandler('SPZ:themeUpdated', function(theme) pushTheme(theme) end)
 
 Citizen.CreateThread(function()
     while true do

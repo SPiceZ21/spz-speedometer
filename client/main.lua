@@ -67,6 +67,34 @@ end)
 
 AddEventHandler('SPZ:themeUpdated', function(theme) pushTheme(theme) end)
 
+-- ── Rewind allowance ────────────────────────────────────────────────────────
+-- Races only. Rewind does not exist in time trial, so nothing pushes a budget
+-- there and the gauge is never drawn — starting a TT clears it below, in case
+-- one is left over from a race that ended without an event.
+--
+-- Pushed by spz-races, which owns the number: it clamps every claim against
+-- Config.Rewind.maxCreditPerLapMs and resets the budget at each lap boundary.
+-- Held here rather than polled so the gauge costs nothing when nobody rewinds.
+--
+-- `usedMs == nil` clears it, which is what leaving a race does — the gauge is
+-- only meaningful while there is a lap to spend it on.
+local rewindUsed, rewindMax = 0, 0
+
+exports("SetRewindCredit", function(usedMs, maxMs)
+    rewindUsed = math.max(0, math.floor(tonumber(usedMs) or 0))
+    rewindMax  = math.max(0, math.floor(tonumber(maxMs) or 0))
+end)
+
+exports("ClearRewindCredit", function() rewindUsed, rewindMax = 0, 0 end)
+
+-- Any exit from a race, and either end of a time trial, takes the gauge with
+-- it: a stale allowance from a race that ended is worse than none, because it
+-- reads as live — and in TT it would advertise a mechanic that mode does not
+-- have.
+for _, evt in ipairs({ "SPZ:raceEnd", "SPZ:tt:Begin", "SPZ:tt:End", "SPZ:tpToSafeZone", "SPZ:playerDNF" }) do
+    RegisterNetEvent(evt, function() rewindUsed, rewindMax = 0, 0 end)
+end
+
 Citizen.CreateThread(function()
     while true do
         local sleep = 500
@@ -107,6 +135,10 @@ Citizen.CreateThread(function()
                 tcsCut    = info.tcsCut,
                 boost     = info.boost,
                 status    = status,
+                -- Remaining allowance, not spent: what the driver needs to know
+                -- is how much rewind they still have.
+                rewindMax  = rewindMax,
+                rewindLeft = math.max(0, rewindMax - rewindUsed),
             })
         else
             if isVisible then

@@ -19,6 +19,10 @@ interface SpeedoData {
   launch: boolean     // launch control holding revs
   tcsCut: boolean      // traction control actively cutting power this frame
   boost: number       // 0..1 forced-induction spool, 0 on non-turbo cars
+  // Per-lap rewind allowance, in ms, pushed by spz-races. `rewindMax` of 0
+  // means there is no lap in progress and the gauge is not drawn at all.
+  rewindMax: number
+  rewindLeft: number
   status: DashStatus
 }
 
@@ -40,6 +44,8 @@ const DEFAULT_DATA: SpeedoData = {
   launch: false,
   tcsCut: false,
   boost: 0,
+  rewindMax: 0,
+  rewindLeft: 0,
   status: DEFAULT_STATUS,
 }
 
@@ -89,40 +95,81 @@ export function App() {
 
   const { status } = data
 
+  // Allowance left, as a fraction. Drawn as remaining rather than consumed so
+  // the gauge empties as it is spent, which is how a fuel or ammo gauge reads.
+  const rewindPct = data.rewindMax > 0
+    ? Math.max(0, Math.min(1, data.rewindLeft / data.rewindMax))
+    : 0
+  const rewindSecs = data.rewindLeft / 1000
+  // Segmented rather than continuous: a partly-lit block is countable at a
+  // glance, where a bar 40% along is not. Trailing segment lights partially so
+  // the gauge still moves smoothly as the allowance drains.
+  const RW_SEGS = 8
+  const rewindSegs = Array.from({ length: RW_SEGS }, (_, i) =>
+    Math.max(0, Math.min(1, rewindPct * RW_SEGS - i)))
+  // Under a quarter left is the point at which a driver should stop assuming
+  // another rewind is available.
+  const rewindLow = data.rewindMax > 0 && rewindPct <= 0.25
+  const rewindOut = data.rewindMax > 0 && data.rewindLeft <= 0
+
+  // One flag slot, not three stacked ones. These states are mutually exclusive
+  // in practice and only one can be acted on at a time.
+  const flag = data.launch ? 'LC' : data.tcsCut ? 'TCS' : null
+
   return (
     <div class="hud-wrap">
-      <div class="speedo-container">
-        {/* Rev counter as a continuous progress track, matching the checkpoint
-            bar in the race HUD so the two read as the same instrument family. */}
-        <div class="rpm-track" data-red={data.inRedline} data-limiter={data.limiter} data-shifting={data.shifting}>
-          <div class="rpm-fill" style={{ width: `${data.pct}%` }} />
+      <div class="hud" data-red={data.inRedline} data-limiter={data.limiter} data-shifting={data.shifting}>
+        {/* Rev bar. One line, one fill, a marked redline and a bright head —
+            nothing else. It is the only element that moves fast enough to be
+            read peripherally, so it gets the full width and no company. */}
+        <div class="tach">
+          <div class="tach-fill" style={{ width: `${data.pct}%` }} />
+          <span class="tach-red" />
+          {/* Boost rides under the bar as its own thin trace rather than
+              claiming a row — same information, no extra furniture. */}
+          {data.boost > 0.02 && (
+            <div class="tach-boost" style={{ width: `${data.boost * 100}%` }} />
+          )}
         </div>
 
-        {data.boost > 0.02 && (
-          <div class="boost-track">
-            <div class="boost-fill" style={{ width: `${data.boost * 100}%` }} />
-          </div>
-        )}
+        {/* Speed, with the gear as a small glyph beside it. No plate, no box:
+            the gear is one character and never needed furniture to be found. */}
+        <div class="main">
+          <span class="speed">
+            {data.speed}
+            <i class="unit">KM/H</i>
+          </span>
 
-        <div class="stats-row">
-          <div class="indicators">
-            <span class={`ind ind-arrow ind-left ${status.leftBlinker ? 'on' : ''}`}>◀</span>
-            <span class={`ind ind-beam ${status.highbeams ? 'on' : status.lights ? 'dim' : ''}`}>▲</span>
-            <span class={`ind ind-handbrake ${status.handbrake ? 'on' : ''}`}>P</span>
-            <span class={`ind ind-arrow ind-right ${status.rightBlinker ? 'on' : ''}`}>▶</span>
-          </div>
-
-          <div class="gear-box" data-launch={data.launch} data-tcs-cut={data.tcsCut}>
-            <span class="gear-val">{data.gear}</span>
-            {data.launch && <span class="gear-flag">LC</span>}
-            {data.tcsCut && !data.launch && <span class="gear-flag">TCS</span>}
-          </div>
-          <div class="speed-box">
-            <span class="speed-val">{data.speed}</span>
-            <span class="speed-unit">KM/H</span>
-          </div>
+          <span class="gear" data-flag={flag ? flag.toLowerCase() : undefined}>
+            {flag && <i class="flag">{flag}</i>}
+            {data.gear}
+          </span>
         </div>
 
+        <div class="foot">
+          {/* Indicators are drawn only while true — no row of dark
+              placeholders. At rest the dash is revs, gear, speed. */}
+          <div class="inds">
+            {status.leftBlinker && <i class="ind arrow on">◀</i>}
+            {(status.highbeams || status.lights) && (
+              <i class={`ind ${status.highbeams ? 'on' : 'dim'}`}>▲</i>
+            )}
+            {status.handbrake && <i class="ind hb on">P</i>}
+            {status.rightBlinker && <i class="ind arrow on">▶</i>}
+          </div>
+
+          {/* Rewind allowance — only while there is a lap to spend it on. */}
+          {data.rewindMax > 0 && (
+            <div class="rw" data-low={rewindLow} data-out={rewindOut}>
+              <span class="rw-segs">
+                {rewindSegs.map((fill, i) => (
+                  <i key={i} class="rw-seg" style={{ '--f': fill } as any} />
+                ))}
+              </span>
+              <span class="rw-val">{rewindOut ? 'SPENT' : `${rewindSecs.toFixed(1)}`}</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

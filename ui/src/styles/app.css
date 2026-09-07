@@ -1,175 +1,225 @@
-/* HUD — pointer-events: none on root, re-enabled per element as needed */
+/* Speedometer HUD.
+   pointer-events: none on the root; nothing here is interactive.
+
+   Design rules, in priority order:
+     1. Three things are read at speed — revs, gear, speed. Everything else is
+        secondary and must not compete with them.
+     2. Nothing is drawn that is not currently true. Boost, the rewind gauge and
+        every indicator are absent, not dimmed-and-empty, when they do not
+        apply.
+     3. No panel, no chrome, no lean. The HUD floats on the scene; legibility
+        over a bright road comes from a dark halo on the type itself, not from
+        a slab behind it. A panel is a large permanent shape that hides the
+        game to make four small shapes easier to read — the wrong trade. */
+
 .hud-wrap {
   position: fixed;
-  bottom: 2.5vh;
-  right: 2vw;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
+  right: 2.4vw;
+  bottom: 3vh;
   pointer-events: none;
-  /* Overall size only — uniform scale toward the anchored corner. */
-  transform: scale(1.0);
-  transform-origin: bottom right;
 }
 
-.speedo-container {
-  width: 340px;
+.hud {
+  width: 250px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
-  transform: skew(-12deg);
+  gap: 9px;
+  /* One shadow for the whole assembly. Every child inherits separation from
+     the background without paying for its own filter. */
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.85));
 }
 
-/* ── Rev counter ──────────────────────────────────────────── */
-/* Flat by design: a plain track and a plain fill. No inset shadow, gradient or
-   glow — those read as a moulded 3D part, which fought the flat panels around
-   it. */
-.rpm-track {
+/* ── Rev bar ────────────────────────────────────────────────
+   A single flat line. Fast linear transition — revs move quickly and an eased
+   bar lags the engine audibly. */
+.tach {
   position: relative;
-  width: 100%;
-  height: 14px;
-  margin-bottom: 4px;
+  height: 4px;
   border-radius: 2px;
-  /* Cancels the container lean so the bar sits square, then pulls it back into
-     column: a skewed parent also displaces children horizontally by 0.2126 x
-     their distance from its centre. */
-  transform: skew(12deg) translateX(-10px);
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
+  background: rgba(255, 255, 255, 0.16);
 }
-
-.rpm-fill {
+.tach-fill {
   position: absolute;
   inset: 0 auto 0 0;
+  border-radius: 2px;
   background: var(--color-primary);
-  /* Bright leading edge marking where the needle currently sits. */
-  border-right: 2px solid #fff;
-  /* Revs move fast — a slow ease would lag the engine. */
   transition: width 70ms linear, background 120ms linear;
 }
-
-/* Past the redline the fill turns red. */
-.rpm-track[data-red="true"] .rpm-fill { background: #ff3c28; }
-
-/* Bouncing off the limiter — a hard flash, faster than the redline glow,
-   so a held limiter reads as distinct from just sitting in the red. */
-.rpm-track[data-limiter="true"] .rpm-fill { animation: rpm-limiter-flash 90ms steps(1) infinite; }
-@keyframes rpm-limiter-flash {
-  50% { background: #fff; }
-}
-
-/* Mid gear-change power cut — a single quick blip on the whole track. */
-.rpm-track[data-shifting="true"] { animation: rpm-shift-flash 120ms ease-out; }
-@keyframes rpm-shift-flash {
-  0% { background: rgba(255, 255, 255, 0.35); }
-  100% { background: rgba(255, 255, 255, 0.08); }
-}
-
-/* ── Boost / spool ────────────────────────────────────────────
-   Same flat-track language as the rev counter, only shown once a
-   turbo car actually has boost to show. */
-.boost-track {
-  position: relative;
-  width: 100%;
-  height: 5px;
-  margin-top: -2px;
-  margin-bottom: 4px;
-  border-radius: 2px;
-  transform: skew(12deg) translateX(-10px);
-  background: rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-.boost-fill {
+/* Bright head — the point the eye actually tracks along the line. */
+.tach-fill::after {
+  content: '';
   position: absolute;
-  inset: 0 auto 0 0;
+  top: -2px;
+  right: -1px;
+  bottom: -2px;
+  width: 2px;
+  border-radius: 1px;
+  background: #fff;
+}
+.hud[data-red="true"] .tach-fill { background: #ff3c28; }
+
+/* The redline, marked on the track so the shift point has a place and not just
+   a colour that arrives once you are already past it. */
+.tach-red {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: 88%;
+  width: 1px;
+  background: rgba(255, 60, 40, 0.85);
+}
+
+/* Bouncing off the limiter — a hard strobe, distinct from simply sitting in
+   the red, which is a state rather than an event. */
+.hud[data-limiter="true"] .tach-fill { animation: tach-limiter 90ms steps(1) infinite; }
+@keyframes tach-limiter { 50% { background: #fff; } }
+
+/* Mid gear-change cut — one blip across the empty track. */
+.hud[data-shifting="true"] .tach { animation: tach-shift 130ms ease-out; }
+@keyframes tach-shift {
+  0%   { background: rgba(255, 255, 255, 0.5); }
+  100% { background: rgba(255, 255, 255, 0.16); }
+}
+
+/* Boost — a thinner trace directly under the bar. */
+.tach-boost {
+  position: absolute;
+  left: 0;
+  top: 7px;
+  height: 2px;
+  border-radius: 1px;
   background: #29d1ff;
   transition: width 70ms linear;
 }
 
-/* Stats */
-.stats-row {
+/* ── Speed + gear ───────────────────────────────────────────
+   Speed leads. The gear trails it, smaller and dimmer: one character that has
+   to be findable, not prominent. */
+.main {
   display: flex;
-  align-items: flex-end;
-  gap: 16px;
-  transform: skew(12deg);
+  align-items: baseline;
+  gap: 10px;
 }
 
-/* ── Dashboard indicators ─────────────────────────────────────
-   Blinkers, beams, handbrake — computed client-side every tick but
-   previously dropped on the floor before reaching the UI. Dim when
-   off, lit (and blinking, for the arrows) when active. */
-.indicators {
+.speed {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
   gap: 5px;
-  padding-bottom: 6px;
-}
-.ind {
-  font-size: 11px;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.15);
-  transition: color 100ms linear;
-}
-.ind.dim { color: rgba(255, 255, 255, 0.4); }
-.ind.on { color: var(--color-primary); }
-.ind-arrow.on { animation: ind-blink 600ms steps(1) infinite; }
-.ind-handbrake.on { color: #ff3c28; }
-@keyframes ind-blink { 50% { opacity: 0.15; } }
-
-.gear-box {
-  position: relative;
-  width: 54px;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: border-color 120ms linear;
-}
-.gear-box[data-launch="true"] { border-color: #2bff8c; }
-.gear-box[data-tcs-cut="true"] { border-color: #ffd12b; }
-.gear-val {
   font-family: var(--font-primary);
   font-weight: 800;
-  font-size: 36px;
+  font-size: 54px;
+  line-height: 0.82;
+  letter-spacing: -2px;
   color: #fff;
-  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
-.gear-flag {
-  position: absolute;
-  top: -9px;
-  left: 50%;
-  transform: translateX(-50%);
+.unit {
   font-family: var(--font-mono);
+  font-style: normal;
   font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 1px 4px;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.gear {
+  position: relative;
+  margin-left: auto;
+  font-family: var(--font-primary);
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.6);
+}
+.gear[data-flag] { color: #fff; }
+
+/* Launch control / TCS — one slot, since only one can be acted on at a time. */
+.flag {
+  position: absolute;
+  top: -9px;
+  right: 0;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 3px;
   border-radius: 2px;
   background: #2bff8c;
   color: #000;
 }
-.gear-box[data-tcs-cut="true"] .gear-flag { background: #ffd12b; }
+.gear[data-flag="tcs"] .flag { background: #ffd12b; }
 
-.speed-box { display: flex; align-items: baseline; gap: 4px; }
-.speed-val {
-  font-family: var(--font-primary);
-  font-weight: 800;
-  font-size: 64px;
-  color: #fff;
-  line-height: 0.8;
-  letter-spacing: -2px;
+/* ── Footer: indicators + rewind ───────────────────────────── */
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 9px;
 }
-.speed-unit {
+.foot:empty { display: none; }
+
+.inds {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ind {
+  font-style: normal;
+  font-size: 9px;
+  line-height: 1;
+  transition: color 100ms linear;
+}
+.ind.dim { color: rgba(255, 255, 255, 0.4); }
+.ind.on  { color: var(--color-primary); }
+.ind.arrow.on { animation: ind-blink 600ms steps(1) infinite; }
+.ind.hb.on { color: #ff3c28; }
+@keyframes ind-blink { 50% { opacity: 0.15; } }
+
+/* Rewind allowance — the per-lap credit budget, drawn as remaining rather than
+   spent so it empties like a fuel gauge. Segmented: blocks are countable under
+   braking where a bar 40% along is a length you have to estimate. */
+.rw {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rw-segs {
+  display: flex;
+  gap: 3px;
+}
+/* Each block carries its own 0..1 fill in --f, so the trailing partial segment
+   drains smoothly instead of snapping off a whole block at a time. */
+.rw-seg {
+  --f: 0;
+  position: relative;
+  width: 9px;
+  height: 4px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+}
+.rw-seg::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--f) * 100%);
+  background: #b76cff;   /* the fastest-lap purple, reused for time you win back */
+  transition: width 220ms ease-out, background 200ms linear;
+}
+.rw-val {
+  min-width: 26px;
+  text-align: right;
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 9px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.55);
+  font-variant-numeric: tabular-nums;
 }
 
+/* Running low, then gone. Colour carries it — two lit blocks and eight lit
+   blocks are the same shape at the edge of vision. */
+.rw[data-low="true"] .rw-seg::after { background: #ffd12b; }
+.rw[data-low="true"] .rw-val { color: #ffd12b; }
+.rw[data-out="true"] .rw-val { color: rgba(255, 60, 40, 0.9); }

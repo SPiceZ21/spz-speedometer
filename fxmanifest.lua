@@ -3,7 +3,7 @@ game 'gta5'
 
 name 'spz-speedometer'
 description 'Premium Racing Speedometer with spz-physics integration'
-version '1.1.2'
+version '1.2.0'
 author 'SPiceZ-Core'
 
 ui_page 'ui/dist/index.html'

@@ -26,6 +26,12 @@ interface SpeedoData {
   status: DashStatus
 }
 
+// Where the tach track stops being plain range and becomes marked zones: the
+// shift block, then the redline block. The moving fill runs up to the first of
+// these and the blocks take over from there.
+const TACH_WARN_AT = 76
+const TACH_RED_AT = 88
+
 const DEFAULT_STATUS: DashStatus = {
   leftBlinker: false,
   rightBlinker: false,
@@ -119,31 +125,38 @@ export function App() {
   return (
     <div class="hud-wrap">
       <div class="hud" data-red={data.inRedline} data-limiter={data.limiter} data-shifting={data.shifting}>
-        {/* Rev bar. One line, one fill, a marked redline and a bright head —
-            nothing else. It is the only element that moves fast enough to be
-            read peripherally, so it gets the full width and no company. */}
+        {/* Speed leads the row alone — nothing shares its baseline. The right
+            of the row is a column: the unit label, then the gear on its own
+            plate. The label sits with the gear rather than against the digits
+            because it is read once to learn the scale and then never again,
+            while the number under it is read constantly. */}
+        <div class="main">
+          <span class="speed">{data.speed}</span>
+
+          <div class="gear-col">
+            <i class="unit">KM/H</i>
+            <span class="gear" data-flag={flag ? flag.toLowerCase() : undefined}>
+              {flag && <i class="flag">{flag}</i>}
+              <b class="gear-val">{data.gear}</b>
+            </span>
+          </div>
+        </div>
+
+        {/* Rev bar, under the readout and running the full width. The top end
+            of the range is painted onto the track as two blocks — shift zone,
+            then redline — so the shift point is a place on the bar rather than
+            a colour that only arrives once you are already past it. The moving
+            fill covers the range below them and parks at the shift zone; from
+            there the blocks light in turn. */}
         <div class="tach">
-          <div class="tach-fill" style={{ width: `${data.pct}%` }} />
-          <span class="tach-red" />
+          <div class="tach-fill" style={{ width: `${Math.min(data.pct, TACH_WARN_AT)}%` }} />
+          <span class="tach-zone warn" data-lit={data.pct >= TACH_WARN_AT} />
+          <span class="tach-zone red" data-lit={data.pct >= TACH_RED_AT} />
           {/* Boost rides under the bar as its own thin trace rather than
               claiming a row — same information, no extra furniture. */}
           {data.boost > 0.02 && (
             <div class="tach-boost" style={{ width: `${data.boost * 100}%` }} />
           )}
-        </div>
-
-        {/* Speed, with the gear as a small glyph beside it. No plate, no box:
-            the gear is one character and never needed furniture to be found. */}
-        <div class="main">
-          <span class="speed">
-            {data.speed}
-            <i class="unit">KM/H</i>
-          </span>
-
-          <span class="gear" data-flag={flag ? flag.toLowerCase() : undefined}>
-            {flag && <i class="flag">{flag}</i>}
-            {data.gear}
-          </span>
         </div>
 
         <div class="foot">

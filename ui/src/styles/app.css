@@ -7,10 +7,13 @@
      2. Nothing is drawn that is not currently true. Boost, the rewind gauge and
         every indicator are absent, not dimmed-and-empty, when they do not
         apply.
-     3. No panel, no chrome, no lean. The HUD floats on the scene; legibility
-        over a bright road comes from a dark halo on the type itself, not from
-        a slab behind it. A panel is a large permanent shape that hides the
-        game to make four small shapes easier to read — the wrong trade. */
+     3. No panel behind the assembly, no chrome, no lean. The HUD floats on the
+        scene; legibility over a bright road comes from a dark halo on the type
+        itself, not from a slab behind it. A full panel is a large permanent
+        shape that hides the game to make four small shapes easier to read —
+        the wrong trade. The gear plate is the one framed element, and it is
+        framed because a single character needs an anchor to be found without
+        reading the row. */
 
 .hud-wrap {
   position: fixed;
@@ -30,48 +33,74 @@
 }
 
 /* ── Rev bar ────────────────────────────────────────────────
-   A single flat line. Fast linear transition — revs move quickly and an eased
-   bar lags the engine audibly. */
+   A single flat line under the readout. Fast linear transition — revs move
+   quickly and an eased bar lags the engine audibly. The top of the range is
+   painted on as two blocks so the shift point has a place on the track. */
 .tach {
   position: relative;
-  height: 4px;
-  border-radius: 2px;
+  height: 10px;
+  border-radius: 1px;
   background: rgba(255, 255, 255, 0.16);
 }
 .tach-fill {
   position: absolute;
   inset: 0 auto 0 0;
-  border-radius: 2px;
-  background: var(--color-primary);
+  border-radius: 1px;
+  background: linear-gradient(90deg,
+    rgba(var(--color-primary-rgb), 0.5),
+    var(--color-primary));
   transition: width 70ms linear, background 120ms linear;
 }
-/* Bright head — the point the eye actually tracks along the line. */
+/* Bright head — the point the eye actually tracks along the line. It stands
+   proud of the track top and bottom so it reads as a marker riding the bar
+   rather than a highlight inside the fill. */
 .tach-fill::after {
   content: '';
   position: absolute;
-  top: -2px;
-  right: -1px;
-  bottom: -2px;
-  width: 2px;
-  border-radius: 1px;
+  top: -3px;
+  right: 0;
+  bottom: -3px;
+  width: 4px;
+  border-radius: 0;
   background: #fff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.55);
 }
-.hud[data-red="true"] .tach-fill { background: #ff3c28; }
+.hud[data-red="true"] .tach-fill {
+  background: linear-gradient(90deg, rgba(255, 60, 40, 0.5), #ff3c28);
+}
 
-/* The redline, marked on the track so the shift point has a place and not just
-   a colour that arrives once you are already past it. */
-.tach-red {
+/* The two marked zones: shift, then redline. Unlit they read as part of the
+   empty track and cost nothing; lit, they are the only thing on the HUD that
+   changes colour, which is what makes them findable at the edge of vision. */
+.tach-zone {
   position: absolute;
-  top: -2px;
-  bottom: -2px;
+  top: 0;
+  bottom: 0;
+  border-radius: 1px;
+  transition: background 90ms linear, box-shadow 90ms linear;
+}
+.tach-zone.warn {
+  left: 76%;
+  width: calc(12% - 3px);
+  background: rgba(255, 209, 43, 0.28);
+}
+.tach-zone.red {
   left: 88%;
-  width: 1px;
-  background: rgba(255, 60, 40, 0.85);
+  width: 12%;
+  background: rgba(255, 60, 40, 0.28);
+}
+.tach-zone.warn[data-lit="true"] {
+  background: #ffd12b;
+  box-shadow: 0 0 8px rgba(255, 209, 43, 0.5);
+}
+.tach-zone.red[data-lit="true"] {
+  background: #ff3c28;
+  box-shadow: 0 0 8px rgba(255, 60, 40, 0.55);
 }
 
 /* Bouncing off the limiter — a hard strobe, distinct from simply sitting in
    the red, which is a state rather than an event. */
-.hud[data-limiter="true"] .tach-fill { animation: tach-limiter 90ms steps(1) infinite; }
+.hud[data-limiter="true"] .tach-zone.red { animation: tach-limiter 90ms steps(1) infinite; }
 @keyframes tach-limiter { 50% { background: #fff; } }
 
 /* Mid gear-change cut — one blip across the empty track. */
@@ -85,9 +114,9 @@
 .tach-boost {
   position: absolute;
   left: 0;
-  top: 7px;
+  top: 13px;
   height: 2px;
-  border-radius: 1px;
+  border-radius: 0;
   background: #29d1ff;
   transition: width 70ms linear;
 }
@@ -97,14 +126,22 @@
    to be findable, not prominent. */
 .main {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
+}
+
+/* Right of the row: the unit label, then the gear plate under it. */
+.gear-col {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
 }
 
 .speed {
   display: flex;
-  align-items: baseline;
-  gap: 5px;
+  align-items: flex-start;
   font-family: var(--font-primary);
   font-weight: 800;
   font-size: 54px;
@@ -113,38 +150,61 @@
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
+/* Sits over the gear plate, not against the digits. Read once to learn the
+   scale, then never again — so it is kept out of the number's way. */
 .unit {
-  font-family: var(--font-mono);
+  font-family: var(--font-primary);
   font-style: normal;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  line-height: 1;
+  letter-spacing: 0.12em;
   color: rgba(255, 255, 255, 0.45);
 }
 
+/* The gear gets a plate. It is one character that must be found in the same
+   spot every time without reading the row — the frame is what anchors it, so
+   the eye lands on the box rather than hunting for a glyph. */
 .gear {
   position: relative;
-  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+.gear-val {
   font-family: var(--font-primary);
   font-weight: 800;
-  font-size: 26px;
+  font-size: 22px;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.85);
+  font-variant-numeric: tabular-nums;
 }
-.gear[data-flag] { color: #fff; }
+.gear[data-flag] .gear-val { color: #fff; }
+.hud[data-red="true"] .gear {
+  border-color: rgba(255, 60, 40, 0.55);
+  background: rgba(255, 60, 40, 0.16);
+}
 
-/* Launch control / TCS — one slot, since only one can be acted on at a time. */
+/* Launch control / TCS — one slot, since only one can be acted on at a time.
+   Parked in the gap to the left of the plate: the space above it belongs to
+   the unit label, and the space below it to the rev bar. */
 .flag {
   position: absolute;
-  top: -9px;
-  right: 0;
-  font-family: var(--font-mono);
+  top: 3px;
+  right: calc(100% + 5px);
+  font-family: var(--font-primary);
   font-style: normal;
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 1px 3px;
-  border-radius: 2px;
+  border-radius: 1px;
   background: #2bff8c;
   color: #000;
 }
@@ -196,7 +256,7 @@
   position: relative;
   width: 9px;
   height: 4px;
-  border-radius: 1px;
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.16);
   overflow: hidden;
 }
@@ -211,7 +271,7 @@
 .rw-val {
   min-width: 26px;
   text-align: right;
-  font-family: var(--font-mono);
+  font-family: var(--font-primary);
   font-size: 9px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.55);

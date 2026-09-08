@@ -20,6 +20,11 @@
   right: 2.4vw;
   bottom: 3vh;
   pointer-events: none;
+  /* Overall size of the dash. Scaled here rather than by editing every px
+     below, so the proportions worked out for the layout stay exactly as they
+     are — and the vw/vh anchor still resolves against the real viewport, so
+     the HUD keeps its corner instead of drifting off-screen as it grows. */
+  zoom: 1.2;
 }
 
 .hud {

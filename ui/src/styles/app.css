@@ -3,7 +3,7 @@
 
 .hud-wrap {
   position: fixed;
-  right: 2vw;
+  right: 0.8vw;
   bottom: 2.5vh;
   pointer-events: none;
 }
@@ -16,7 +16,7 @@
 }
 
 .dial {
-  width: 330px;
+  width: clamp(360px, 23vw, 480px);
   height: auto;
   overflow: visible;
 }
@@ -33,18 +33,38 @@
 .needle-s1 { stop-color: #ff3b30; stop-opacity: 0.9; }
 .needle-s2 { stop-color: #ff6a5a; stop-opacity: 1; }
 
-/* ── Boost arc, left of the dial ───────────────────────────────── */
-.boost-track,
-.boost-fill {
+/* ── Rewind allowance arc, left of the dial ────────────────────── */
+.rw-track,
+.rw-fill {
   fill: none;
   stroke-width: 4;
 }
-.boost-track { stroke: rgba(255, 210, 30, 0.14); }
-.boost-fill {
+.rw-track { stroke: rgba(255, 210, 30, 0.14); }
+.rw-fill {
   stroke: #ffd21e;
   filter: drop-shadow(0 0 3px rgba(255, 210, 30, 0.7));
-  transition: stroke-dasharray 120ms linear;
+  transition: stroke-dasharray 220ms ease-out, stroke 200ms linear;
 }
+.rw-arc[data-on="false"] .rw-track { stroke: rgba(255, 255, 255, 0.08); }
+.rw-val {
+  font-family: var(--font-primary);
+  font-size: 6px;
+  font-weight: 800;
+  fill: #ffd21e;
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-variant-numeric: tabular-nums;
+}
+/* Under a quarter left the driver should stop counting on another rewind. */
+.rw-arc[data-low="true"] .rw-fill {
+  stroke: #ff3b30;
+  filter: drop-shadow(0 0 4px rgba(255, 59, 48, 0.8));
+  animation: rw-low 900ms ease-in-out infinite;
+}
+.rw-arc[data-low="true"] .rw-val { fill: #ff6a5a; }
+.rw-arc[data-out="true"] .rw-track { stroke: rgba(255, 59, 48, 0.28); }
+.rw-arc[data-out="true"] .rw-val { fill: #ff3b30; }
+@keyframes rw-low { 50% { opacity: 0.45; } }
 
 /* ── Outer band — ten segments, always blue ────────────────────── */
 .band { filter: drop-shadow(0 0 4px rgba(43, 127, 255, 0.85)); }
@@ -148,39 +168,3 @@
   animation: ind-blink 600ms steps(1) infinite;
 }
 @keyframes ind-blink { 50% { opacity: 0.15; } }
-
-/* ── Rewind allowance — only while a lap is in progress ────────── */
-.rw {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.rw-segs { display: flex; gap: 3px; }
-.rw-seg {
-  --f: 0;
-  position: relative;
-  width: 9px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.16);
-  overflow: hidden;
-}
-.rw-seg::after {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: calc(var(--f) * 100%);
-  background: #b76cff;
-  transition: width 220ms ease-out, background 200ms linear;
-}
-.rw-val {
-  min-width: 26px;
-  text-align: right;
-  font-family: var(--font-primary);
-  font-size: 9px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.55);
-  font-variant-numeric: tabular-nums;
-}
-.rw[data-low="true"] .rw-seg::after { background: #ffd12b; }
-.rw[data-low="true"] .rw-val { color: #ffd12b; }
-.rw[data-out="true"] .rw-val { color: rgba(255, 60, 40, 0.9); }

@@ -100,7 +100,8 @@ const TRACK_R = 77
 const TRACK_W = 3.4
 const NUM_R = 64
 const NEEDLE_LEN = TRACK_R + TRACK_W / 2 + 1.5
-const BOOST_R = 128, BOOST_START = -122, BOOST_END = -56, BOOST_SEGS = 4
+// Left arc: the per-lap rewind allowance, drained bottom-up as it is spent.
+const RW_R = 128, RW_START = -122, RW_END = -56, RW_ARC_SEGS = 4
 const RED_FROM = 7.2, RED_TO = 10
 
 // Static geometry — built once at load, not on every telemetry tick.
@@ -137,9 +138,11 @@ const GLOW_FROM = (T_IN - GLOW_W) / T_IN
 const GLOW_MID = 1 - (1 - GLOW_FROM) * 0.35
 const GLOW_TRACK = arcPath(CX, CY, GLOW_R, SWEEP_START, SWEEP_END)
 const GLOW_RED = arcPath(CX, CY, GLOW_R, scaleDeg(RED_FROM), scaleDeg(RED_TO))
-const BOOST_STEP = (BOOST_END - BOOST_START) / BOOST_SEGS
-const BOOST_SEG_PATHS = Array.from({ length: BOOST_SEGS }, (_, i) =>
-  arcPath(CX, CY, BOOST_R, BOOST_START + i * BOOST_STEP + 0.8, BOOST_START + (i + 1) * BOOST_STEP - 0.8))
+const RW_STEP = (RW_END - RW_START) / RW_ARC_SEGS
+const RW_SEG_PATHS = Array.from({ length: RW_ARC_SEGS }, (_, i) =>
+  arcPath(CX, CY, RW_R, RW_START + i * RW_STEP + 0.8, RW_START + (i + 1) * RW_STEP - 0.8))
+// Seconds left, just below the bottom of the arc.
+const RW_LABEL = pt(CX, CY, RW_R, RW_START - 7)
 const NEEDLE = `${CX - 1.6},${CY} ${CX + 1.6},${CY} ${CX + 0.5},${CY - NEEDLE_LEN} ${CX - 0.5},${CY - NEEDLE_LEN}`
 
 function arrow(deg: number, dir: -1 | 1) {
@@ -171,17 +174,14 @@ export function App() {
   const rewindPct = data.rewindMax > 0
     ? Math.max(0, Math.min(1, data.rewindLeft / data.rewindMax))
     : 0
-  const rewindSecs = data.rewindLeft / 1000
-  const RW_SEGS = 8
-  const rewindSegs = Array.from({ length: RW_SEGS }, (_, i) =>
-    Math.max(0, Math.min(1, rewindPct * RW_SEGS - i)))
-  const rewindLow = data.rewindMax > 0 && rewindPct <= 0.25
-  const rewindOut = data.rewindMax > 0 && data.rewindLeft <= 0
+  const rewindSecs = Math.max(0, data.rewindLeft) / 1000
+  const rewindOn  = data.rewindMax > 0
+  const rewindLow = rewindOn && rewindPct <= 0.25
+  const rewindOut = rewindOn && data.rewindLeft <= 0
 
   const flag = data.launch ? 'LC' : data.tcsCut ? 'TCS' : null
 
   const rev = Math.max(0, Math.min(1, data.pct / 100))
-  const boost = Math.max(0, Math.min(1, data.boost))
 
   return (
     <div class="hud-wrap">
@@ -212,14 +212,23 @@ export function App() {
 
           <circle cx={CX} cy={CY} r={BAND_R + 6} fill="url(#spz-face)" />
 
-          {/* Boost fills bottom-up, segment by segment. */}
-          {BOOST_SEG_PATHS.map((d, i) => <path key={i} class="boost-track" d={d} />)}
-          {BOOST_SEG_PATHS.map((d, i) => {
-            const f = Math.max(0, Math.min(1, boost * BOOST_SEGS - i))
-            return f > 0.01 && (
-              <path key={i} class="boost-fill" d={d} pathLength={1} style={{ strokeDasharray: `${f} 1` }} />
-            )
-          })}
+          {/* Rewind allowance for this lap, full at the top and draining down,
+              segment by segment. The track stays drawn when no lap is running
+              so the dial keeps its shape. */}
+          <g class="rw-arc" data-on={rewindOn} data-low={rewindLow} data-out={rewindOut}>
+            {RW_SEG_PATHS.map((d, i) => <path key={i} class="rw-track" d={d} />)}
+            {rewindOn && RW_SEG_PATHS.map((d, i) => {
+              const f = Math.max(0, Math.min(1, rewindPct * RW_ARC_SEGS - i))
+              return f > 0.01 && (
+                <path key={i} class="rw-fill" d={d} pathLength={1} style={{ strokeDasharray: `${f} 1` }} />
+              )
+            })}
+            {rewindOn && (
+              <text class="rw-val" x={RW_LABEL.x} y={RW_LABEL.y}>
+                {rewindOut ? 'SPENT' : `${rewindSecs.toFixed(1)}s`}
+              </text>
+            )}
+          </g>
 
           <g class="band">
             {BAND_SEGS.map((d, i) => <path key={i} d={d} />)}
@@ -276,17 +285,6 @@ export function App() {
           {status.leftBlinker && <polygon class="blinker" points={ARROW_L} />}
           {status.rightBlinker && <polygon class="blinker" points={ARROW_R} />}
         </svg>
-
-        {data.rewindMax > 0 && (
-          <div class="rw" data-low={rewindLow} data-out={rewindOut}>
-            <span class="rw-segs">
-              {rewindSegs.map((fill, i) => (
-                <i key={i} class="rw-seg" style={{ '--f': fill } as any} />
-              ))}
-            </span>
-            <span class="rw-val">{rewindOut ? 'SPENT' : `${rewindSecs.toFixed(1)}`}</span>
-          </div>
-        )}
       </div>
     </div>
   )

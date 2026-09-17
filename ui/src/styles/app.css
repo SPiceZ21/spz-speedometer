@@ -22,16 +22,35 @@
 }
 
 /* Face: a soft dark disc that fades out at the rim — enough to hold white
-   type off a bright road without reading as a panel. */
-.face-s0 { stop-color: #000; stop-opacity: 0.55; }
-.face-s1 { stop-color: #000; stop-opacity: 0.38; }
+   type off a bright road without reading as a panel.
+
+   Lightened from 0.55/0.38 to 0.30/0.18. It was doing more than it needed to:
+   at 0.55 the centre read as a smoked panel bolted over the road rather than as
+   part of the HUD, and the whole point of the radial falloff is that there is
+   no edge to notice.
+
+   That does cost the readout some contrast, so the drop-shadow under
+   `.readout` was strengthened to compensate — the digits now carry their own
+   edge instead of borrowing it from the disc. If white-on-bright-sky ever
+   becomes a problem, raise the shadow before raising this back up. */
+.face-s0 { stop-color: #000; stop-opacity: 0.30; }
+.face-s1 { stop-color: #000; stop-opacity: 0.18; }
 .face-s2 { stop-color: #000; stop-opacity: 0; }
 
-/* Needle fades in from the hub, so it passes under the speed digits instead
-   of striking through them. */
-.needle-s0 { stop-color: #ff3b30; stop-opacity: 0; }
-.needle-s1 { stop-color: #ff3b30; stop-opacity: 0.9; }
-.needle-s2 { stop-color: #ff6a5a; stop-opacity: 1; }
+/* Needle fades in from the hub, so it passes under the speed digits instead of
+   striking through them.
+
+   The fade is longer and starts later than it used to. Before, the gradient was
+   already at 0.9 opacity by 45% of the needle's length, which put a nearly
+   solid bar across the middle of the dial — so the needle did not so much fade
+   into the centre as stop just short of it. It is now fully transparent through
+   the first third and only reaches full strength near the tip, which leaves the
+   hub genuinely clear and keeps the eye on the end of the needle, where the
+   reading actually is. */
+.needle-s0 { stop-color: #ff4433; stop-opacity: 0; }
+.needle-s1 { stop-color: #ff4433; stop-opacity: 0; }
+.needle-s2 { stop-color: #ff5a46; stop-opacity: 0.85; }
+.needle-s3 { stop-color: #ffa28e; stop-opacity: 1; }
 
 /* ── Rewind allowance arc, left of the dial ────────────────────── */
 .rw-track,
@@ -66,13 +85,41 @@
 .rw-arc[data-out="true"] .rw-val { fill: #ff3b30; }
 @keyframes rw-low { 50% { opacity: 0.45; } }
 
-/* ── Outer band — ten segments, always blue ────────────────────── */
-.band { filter: drop-shadow(0 0 4px rgba(43, 127, 255, 0.85)); }
+/* ── Outer band — sequential shift light ───────────────────────── */
+/*
+ * Ten segments that light with the revs, not a static ring. The geometry was
+ * always here and always decorative; this is what that ring is for on a dial
+ * shaped like this one, and it is the cheapest possible upgrade because the
+ * paths already existed.
+ *
+ * Segments are lit by the rAF loop in app.tsx, which only touches them when
+ * the lit COUNT changes — a handful of times per gear rather than per frame.
+ *
+ * Colour comes from the accent (the spz_theme_* convars, via applyTheme), so
+ * the band follows the server brand. The warn and red tiers do NOT: amber then
+ * red approaching a limiter is an instrument convention that means something,
+ * and theming it away would cost more than it bought. Same reasoning as the
+ * white rev fill, the red zone, the yellow rewind arc and the green blinkers.
+ */
+.band { filter: drop-shadow(0 0 4px rgba(var(--color-primary-rgb), 0.45)); }
 .band path {
   fill: none;
-  stroke: #2b7fff;
+  stroke: var(--color-primary);
   stroke-width: 5;
+  /* Unlit segments stay visible as a dim track, so the ring keeps its shape at
+     idle instead of the dial appearing to lose a part. */
+  opacity: 0.16;
+  transition: opacity 90ms linear, stroke 90ms linear;
 }
+.band path.lit  { opacity: 1; }
+.band path.warn { stroke: #ffc21e; }
+.band path.red  { stroke: #ff3b30; }
+
+/* On the limiter the lit segments strobe. Reuses the redline strobe cadence so
+   the band and the red zone flash together rather than beating against each
+   other. */
+.hud[data-limiter="true"] .band path.lit { animation: dial-limiter 90ms steps(1) infinite; }
+
 
 /* ── Rev band: dark where not yet reached, white fill up to the needle,
       red redline zone. The tick scale lives inside it. ─────────── */
@@ -92,12 +139,15 @@
 /* A major tick the fill has passed shows as a grey notch in the white. */
 .ticks-major .lit { stroke: rgba(118, 124, 138, 0.95); }
 /* The band itself is a hard edge; all its light falls inward, via the
-   gradient strips drawn just inside it. */
-.rev-fill {
-  stroke: #fff;
-  transition: stroke-dasharray 70ms linear;
-}
-.rev-glow { transition: stroke-dasharray 70ms linear; }
+   gradient strips drawn just inside it.
+
+   The fill and its glow are driven frame by frame from the rAF loop in
+   app.tsx, so there is deliberately NO transition on stroke-dasharray. There
+   used to be one, at 70ms, bridging a feed that arrives every 50ms — it never
+   finished before the next sample replaced it, so the fill was permanently
+   chasing. Script easing plus a CSS transition is two filters chasing each
+   other, and the script one is the one that knows about velocity. */
+.rev-fill { stroke: #fff; }
 .red-zone {
   stroke: #ff3b30;
   transition: stroke 90ms linear;
@@ -136,13 +186,19 @@
 }
 
 /* ── Needle ────────────────────────────────────────────────────── */
+/* transform is written every frame by the spring in app.tsx. No transition,
+   for the same reason as the rev fill above; transform-origin lives here
+   rather than inline so the script only ever has to touch `transform`. */
 .needle {
-  filter: drop-shadow(0 0 3px rgba(255, 59, 48, 0.9));
-  transition: transform 70ms linear;
+  /* Brighter and hotter toward the tip — the glow is what carries the needle
+     over the white rev fill it crosses, and at 3px/0.9 it was being swallowed
+     by the fill's own glow rather than sitting on top of it. */
+  filter: drop-shadow(0 0 5px rgba(255, 70, 50, 0.95));
+  transform-origin: 140px 100px;   /* CX, CY in app.tsx */
 }
 
 /* ── Centre readout ────────────────────────────────────────────── */
-.readout { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8)); }
+.readout { filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95)); }
 .readout text {
   font-family: var(--font-primary);
   text-anchor: middle;

@@ -95,13 +95,46 @@ for _, evt in ipairs({ "SPZ:raceEnd", "SPZ:tt:Begin", "SPZ:tt:End", "SPZ:tpToSaf
     RegisterNetEvent(evt, function() rewindUsed, rewindMax = 0, 0 end)
 end
 
+-- ── Race intro ──────────────────────────────────────────────────────────────
+-- The intro (cover → sweep → details card, spz-races server/countdown.lua) is a
+-- cinematic over the start camera; a live gauge sitting on top of it spoils
+-- it. Hidden from 'cover' until the intro ends. The 'end' phase is the normal
+-- way back, but the first countdown tick and every race exit also restore it,
+-- and a deadline (the same one spz-raceUI puts on the intro itself) makes sure
+-- a lost event can never leave a driver without a speedometer.
+local INTRO_MAX_MS = 45000
+
+local inIntro    = false
+local introToken = 0
+
+local function endIntro()
+    introToken = introToken + 1
+    inIntro = false
+end
+
+RegisterNetEvent("SPZ:raceIntro", function(data)
+    local phase = data and data.phase or "cover"
+    if phase == "end" then return endIntro() end
+
+    introToken = introToken + 1
+    local token = introToken
+    inIntro = true
+    SetTimeout(INTRO_MAX_MS, function()
+        if introToken == token then inIntro = false end
+    end)
+end)
+
+for _, evt in ipairs({ "SPZ:countdown", "SPZ:raceEnd", "SPZ:tpToSafeZone", "SPZ:playerDNF" }) do
+    RegisterNetEvent(evt, endIntro)
+end
+
 Citizen.CreateThread(function()
     while true do
         local sleep = 500
         local playerPed = PlayerPedId()
         local vehicle = GetVehiclePedIsIn(playerPed, false)
 
-        if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == playerPed then
+        if not inIntro and vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == playerPed then
             sleep = 50 -- Update UI at 20Hz (or higher if needed)
 
             if not isVisible then

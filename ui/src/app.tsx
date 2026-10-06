@@ -23,6 +23,9 @@ interface SpeedoData {
   // means there is no lap in progress and the gauge is not drawn at all.
   rewindMax: number
   rewindLeft: number
+  // Side-arc override set by another resource (prl-rocketleague boost, 0..100).
+  // -1 = not in use; the arc shows the rewind allowance as usual.
+  sideBoost: number
   status: DashStatus
 }
 
@@ -46,6 +49,7 @@ const DEFAULT_DATA: SpeedoData = {
   boost: 0,
   rewindMax: 0,
   rewindLeft: 0,
+  sideBoost: -1,
   status: DEFAULT_STATUS,
 }
 
@@ -244,6 +248,7 @@ interface Discrete {
   tcsCut: boolean
   rewindMax: number
   rewindLeft: number
+  sideBoost: number
   status: DashStatus
 }
 
@@ -256,6 +261,7 @@ const DEFAULT_DISCRETE: Discrete = {
   tcsCut: false,
   rewindMax: 0,
   rewindLeft: 0,
+  sideBoost: -1,
   status: DEFAULT_STATUS,
 }
 
@@ -270,6 +276,7 @@ function sameDiscrete(a: Discrete, b: Discrete): boolean {
     && a.tcsCut === b.tcsCut
     && a.rewindMax === b.rewindMax
     && a.rewindLeft === b.rewindLeft
+    && a.sideBoost === b.sideBoost
     && a.status.leftBlinker === b.status.leftBlinker
     && a.status.rightBlinker === b.status.rightBlinker
     && a.status.lights === b.status.lights
@@ -349,6 +356,7 @@ export function App() {
           tcsCut:     !!m.tcsCut,
           rewindMax:  m.rewindMax ?? 0,
           rewindLeft: m.rewindLeft ?? 0,
+          sideBoost:  typeof m.sideBoost === 'number' ? Math.round(m.sideBoost) : -1,
           status:     { ...DEFAULT_STATUS, ...m.status },
         }
         setD(prev => (sameDiscrete(prev, next) ? prev : next))
@@ -494,6 +502,12 @@ export function App() {
   const rewindLow = rewindOn && rewindPct <= 0.25
   const rewindOut = rewindOn && d.rewindLeft <= 0
 
+  // Boost mode: the same arc becomes a 0..100 boost meter (accent coloured).
+  const boostOn  = d.sideBoost >= 0
+  const arcOn    = boostOn || rewindOn
+  const arcPct   = boostOn ? Math.min(1, d.sideBoost / 100) : rewindPct
+  const arcLabel = boostOn ? String(d.sideBoost) : (rewindOut ? 'SPENT' : `${rewindSecs.toFixed(1)}s`)
+
   const flag = d.launch ? 'LC' : d.tcsCut ? 'TCS' : null
 
   return (
@@ -533,17 +547,17 @@ export function App() {
           {/* Rewind allowance for this lap, full at the top and draining down,
               segment by segment. The track stays drawn when no lap is running
               so the dial keeps its shape. */}
-          <g class="rw-arc" data-on={rewindOn} data-low={rewindLow} data-out={rewindOut}>
+          <g class="rw-arc" data-mode={boostOn ? 'boost' : 'rewind'} data-on={arcOn} data-low={!boostOn && rewindLow} data-out={!boostOn && rewindOut}>
             {RW_SEG_PATHS.map((path, i) => <path key={i} class="rw-track" d={path} />)}
-            {rewindOn && RW_SEG_PATHS.map((path, i) => {
-              const f = Math.max(0, Math.min(1, rewindPct * RW_ARC_SEGS - i))
+            {arcOn && RW_SEG_PATHS.map((path, i) => {
+              const f = Math.max(0, Math.min(1, arcPct * RW_ARC_SEGS - i))
               return f > 0.01 && (
                 <path key={i} class="rw-fill" d={path} pathLength={1} style={{ strokeDasharray: `${f} 1` }} />
               )
             })}
-            {rewindOn && (
+            {arcOn && (
               <text class="rw-val" x={RW_LABEL.x} y={RW_LABEL.y}>
-                {rewindOut ? 'SPENT' : `${rewindSecs.toFixed(1)}s`}
+                {arcLabel}
               </text>
             )}
           </g>

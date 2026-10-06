@@ -128,13 +128,22 @@ for _, evt in ipairs({ "SPZ:countdown", "SPZ:raceEnd", "SPZ:tpToSafeZone", "SPZ:
     RegisterNetEvent(evt, endIntro)
 end
 
+-- Other resources with their own HUD (e.g. prl-rocketleague) can hide the gauge
+-- while they're active: exports['spz-speedometer']:SetHidden(true/false).
+local hiddenByOther = false
+exports("SetHidden", function(hidden) hiddenByOther = hidden and true or false end)
+
+-- ...or borrow the left side arc as a 0..100 boost meter: SetSideBoost(value), nil to release.
+local sideBoost = nil
+exports("SetSideBoost", function(v) sideBoost = v and math.max(0, math.min(100, tonumber(v) or 0)) or nil end)
+
 Citizen.CreateThread(function()
     while true do
         local sleep = 500
         local playerPed = PlayerPedId()
         local vehicle = GetVehiclePedIsIn(playerPed, false)
 
-        if not inIntro and vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == playerPed then
+        if not inIntro and not hiddenByOther and vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == playerPed then
             sleep = 50 -- Update UI at 20Hz (or higher if needed)
 
             if not isVisible then
@@ -172,6 +181,7 @@ Citizen.CreateThread(function()
                 -- is how much rewind they still have.
                 rewindMax  = rewindMax,
                 rewindLeft = math.max(0, rewindMax - rewindUsed),
+                sideBoost  = sideBoost,
             })
         else
             if isVisible then

@@ -84,6 +84,14 @@
 .rw-arc[data-out="true"] .rw-track { stroke: rgba(255, 59, 48, 0.28); }
 .rw-arc[data-out="true"] .rw-val { fill: #ff3b30; }
 @keyframes rw-low { 50% { opacity: 0.45; } }
+/* Boost mode (prl-rocketleague): accent-coloured, no low/out warnings. */
+.rw-arc[data-mode="boost"] .rw-track { stroke: rgba(var(--color-primary-rgb), 0.16); }
+.rw-arc[data-mode="boost"] .rw-fill {
+  stroke: var(--color-primary);
+  filter: drop-shadow(0 0 3px rgba(var(--color-primary-rgb), 0.8));
+  transition: stroke-dasharray 60ms linear;
+}
+.rw-arc[data-mode="boost"] .rw-val { fill: var(--color-primary); font-size: 8px; }
 
 /* ── Outer band — sequential shift light ───────────────────────── */
 /*

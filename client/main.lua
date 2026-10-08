@@ -85,8 +85,6 @@ exports("SetRewindCredit", function(usedMs, maxMs)
     rewindMax  = math.max(0, math.floor(tonumber(maxMs) or 0))
 end)
 
-exports("ClearRewindCredit", function() rewindUsed, rewindMax = 0, 0 end)
-
 -- Any exit from a race, and either end of a time trial, takes the gauge with
 -- it: a stale allowance from a race that ended is worse than none, because it
 -- reads as live — and in TT it would advertise a mechanic that mode does not

@@ -194,8 +194,10 @@ const ARROW_R = arrow(38, 1)
 // it — that gap is the overshoot you see on a throttle blip and the bounce on
 // an upshift. Raise DAMPING toward 32 to take the bounce out without touching
 // anything else; lower it for a looser, older-gauge feel.
-const NEEDLE_STIFFNESS = 260
-const NEEDLE_DAMPING   = 22
+const NEEDLE_STIFFNESS = 200
+// Near-critical (2*sqrt(200) ≈ 28): the needle glides onto the value without
+// the bounce it had at 22 — smooth rather than lively.
+const NEEDLE_DAMPING   = 27
 
 // A frame hitch, or a tab that was backgrounded and came back, hands rAF a huge
 // delta. Integrating it would fling the needle across the dial and take a
@@ -315,6 +317,7 @@ export function App() {
   const speedEl  = useRef<SVGTextElement | null>(null)
   const bandEls  = useRef<(SVGPathElement | null)[]>([])
   const tickEls  = useRef<(SVGLineElement | null)[]>([])
+  const numEls   = useRef<(SVGTextElement | null)[]>([])
   // Lit-segment count is an integer 0-10, so it changes a few times per gear
   // rather than every frame. Tracking it is what keeps the shift lights off the
   // per-frame DOM-write path entirely.
@@ -440,6 +443,18 @@ export function App() {
       if (!needle) return                       // hidden: nothing is mounted
 
       needle.style.transform = `rotate(${scaleDeg(rev * 10).toFixed(2)}deg)`
+
+      // Scale numbers swell (up to 1.6x) and brighten as the needle nears
+      // them, then shrink back as it passes: a smooth falloff over ~1.3 units.
+      const pos = rev * 10
+      for (let i = 0; i <= 10; i++) {
+        const el = numEls.current[i]
+        if (!el) continue
+        const near = Math.max(0, 1 - Math.abs(pos - i) / 1.3)
+        const k = near * near * (3 - 2 * near)            // smoothstep
+        el.style.transform = `scale(${(1 + 0.6 * k).toFixed(3)})`
+        el.style.opacity = (0.55 + 0.45 * k).toFixed(3)
+      }
 
       const dash = `${rev.toFixed(4)} 1`
       if (fillEl.current) fillEl.current.style.strokeDasharray = dash
@@ -599,7 +614,10 @@ export function App() {
           </g>
 
           <g class="nums">
-            {NUMS.map((p, i) => <text key={i} x={p.x} y={p.y}>{i}</text>)}
+            {NUMS.map((p, i) => (
+              <text key={i} x={p.x} y={p.y} ref={el => { numEls.current[i] = el }}
+                style={{ transformBox: 'fill-box', transformOrigin: 'center' }}>{i}</text>
+            ))}
           </g>
 
           <g class="needle" ref={needleEl}>

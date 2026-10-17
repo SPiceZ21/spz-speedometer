@@ -108,8 +108,11 @@ const scaleDeg = (v: number) => SWEEP_START + (v / 10) * (SWEEP_END - SWEEP_STAR
 const BAND_R = 91
 const TRACK_R = 77
 const TRACK_W = 3.4
-const NUM_R = 64
-const NEEDLE_LEN = TRACK_R + TRACK_W / 2 + 1.5
+const NUM_R = 60
+// Major tick lines reach in from the band toward the numbers, and the needle
+// tip stops right where they end — on the numbers, so it points AT the value.
+const TICK_REACH = 7
+const NEEDLE_LEN = TRACK_R - TRACK_W / 2 - TICK_REACH + 1
 // Left arc: the per-lap rewind allowance, drained bottom-up as it is spent.
 const RW_R = 128, RW_START = -122, RW_END = -56, RW_ARC_SEGS = 4
 const RED_FROM = 7.2, RED_TO = 10
@@ -128,11 +131,11 @@ const MINOR_TICKS = Array.from({ length: 50 }, (_, i) => i)
   .filter(i => i % 5 !== 0)
   .map(i => {
     const a = scaleDeg(i / 5)
-    return { p1: pt(CX, CY, T_IN + 0.5, a), p2: pt(CX, CY, T_OUT - 0.5, a) }
+    return { p1: pt(CX, CY, T_IN - 3, a), p2: pt(CX, CY, T_OUT - 0.5, a) }
   })
 const MAJOR_TICKS = Array.from({ length: 11 }, (_, v) => {
   const a = scaleDeg(v)
-  return { v, p1: pt(CX, CY, T_IN - 0.8, a), p2: pt(CX, CY, T_OUT + 1.8, a) }
+  return { v, p1: pt(CX, CY, T_IN - TICK_REACH, a), p2: pt(CX, CY, T_OUT + 1.8, a) }
 })
 const NUMS = Array.from({ length: 11 }, (_, i) => pt(CX, CY, NUM_R, scaleDeg(i)))
 const TRACK = arcPath(CX, CY, TRACK_R, SWEEP_START, SWEEP_END)

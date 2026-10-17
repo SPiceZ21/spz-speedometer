@@ -52,17 +52,30 @@ AddEventHandler('onResourceStop', function(res)
 end)
 CreateThread(function() hasPhysics = GetResourceState('spz-physics') == 'started' end)
 
--- Base theme (server.cfg spz_theme_* convars via spz-core). Pushed once at
--- start and again on live /spz reloadtheme.
+-- Base theme (server.cfg spz_theme_* convars via spz-core).
+-- A message sent before the page has loaded is dropped, and spz-core may not
+-- have the theme yet right after a restart — which left the gauge on its
+-- orange default. So: keep asking at start until there is a theme, and
+-- re-send it every time the speedometer is shown (the page is loaded by then).
+local lastTheme = nil
 local function pushTheme(theme)
     if theme and next(theme) then
+        lastTheme = theme
         SendNUIMessage({ type = 'theme', theme = theme })
     end
 end
 
-CreateThread(function()
+local function pullTheme()
     local ok, theme = pcall(function() return exports['spz-core']:GetTheme() end)
-    if ok then pushTheme(theme) end
+    if ok and theme and next(theme) then pushTheme(theme) end
+    return lastTheme ~= nil
+end
+
+CreateThread(function()
+    for _ = 1, 30 do
+        if pullTheme() then return end
+        Wait(1000)
+    end
 end)
 
 AddEventHandler('SPZ:themeUpdated', function(theme) pushTheme(theme) end)
@@ -147,6 +160,7 @@ Citizen.CreateThread(function()
             if not isVisible then
                 isVisible = true
                 SendNUIMessage({ type = 'show' })
+                if not pullTheme() and lastTheme then pushTheme(lastTheme) end
             end
 
             local speed = math.floor(GetEntitySpeed(vehicle) * 3.6)

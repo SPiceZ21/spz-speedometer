@@ -138,10 +138,10 @@
 .red-glow { fill: none; }
 .rev-track { stroke: rgba(8, 10, 14, 0.7); }
 
-.ticks-minor line { stroke: rgba(255, 255, 255, 0.32); stroke-width: 0.9; }
+.ticks-minor line { stroke: rgba(255, 255, 255, 0.38); stroke-width: 1.1; }
 .ticks-major line {
   stroke: #fff;
-  stroke-width: 1.5;
+  stroke-width: 2.2;
   transition: stroke 60ms linear;
 }
 /* A major tick the fill has passed shows as a grey notch in the white. */
@@ -186,8 +186,8 @@
 /* ── Scale numbers ─────────────────────────────────────────────── */
 .nums text {
   font-family: var(--font-primary);
-  font-weight: 700;
-  font-size: 9px;
+  font-weight: 800;
+  font-size: 13px;
   fill: #fff;
   text-anchor: middle;
   dominant-baseline: central;

@@ -141,6 +141,9 @@ end
 
 -- Other resources with their own HUD (e.g. prl-rocketleague) can hide the gauge
 -- while they're active: exports['spz-speedometer']:SetHidden(true/false).
+-- Tour preview (spz-tutorial): sweeps the needle on foot so a new player can
+-- see the dial. Declared before the main loop, which stands aside while it runs.
+local demoOn = false
 local hiddenByOther = false
 exports("SetHidden", function(hidden) hiddenByOther = hidden and true or false end)
 
@@ -154,7 +157,9 @@ Citizen.CreateThread(function()
         local playerPed = PlayerPedId()
         local vehicle = GetVehiclePedIsIn(playerPed, false)
 
-        if not inIntro and not hiddenByOther and vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == playerPed then
+        if demoOn then
+            -- spz-tutorial owns the dial right now (see Demo below)
+        elseif not inIntro and not hiddenByOther and vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == playerPed then
             sleep = 50 -- Update UI at 20Hz (or higher if needed)
 
             if not isVisible then
@@ -205,3 +210,31 @@ Citizen.CreateThread(function()
         Citizen.Wait(sleep)
     end
 end)
+
+exports("Demo", function(on)
+    on = on and true or false
+    if on == demoOn then return end
+    demoOn = on
+    if not on then
+        SendNUIMessage({ type = 'hide' })
+        isVisible = false
+        return
+    end
+    SendNUIMessage({ type = 'show' })
+    CreateThread(function()
+        local t = 0
+        while demoOn do
+            t = t + 0.05
+            local pct = (math.sin(t * 1.3) + 1) / 2                -- 0..1 rev sweep
+            local speed = math.floor(60 + 160 * ((math.sin(t * 0.4) + 1) / 2))
+            SendNUIMessage({
+                type = 'update', speed = speed, gear = 1 + math.floor(speed / 45), pct = pct,
+                inRedline = pct > 0.9, shifting = false, limiter = false, launch = false,
+                tcsCut = false, boost = 0, status = {},
+                rewindMax = rewindMax, rewindLeft = rewindMax, sideBoost = sideBoost,
+            })
+            Wait(50)
+        end
+    end)
+end)
+

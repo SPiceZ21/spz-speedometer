@@ -1,31 +1,49 @@
 # spz-speedometer
 
-> Speedometer HUD · `v1.1.2`
+> Racing speedometer.
+
+![version](https://img.shields.io/badge/version-1.10.0-ff6200) ![SPiceZ-Core](https://img.shields.io/badge/SPiceZ--Core-beta-18181b)
 
 ## Overview
 
-`spz-speedometer` renders speed, gear, RPM and nitrous state. It pulls simulated
-powertrain data from [spz-physics](../spz-physics/README.md) when that resource is running
-and falls back to native vehicle values otherwise; nitrous state comes from.
+A themed racing speedometer: speed, gear, RPM and rewind / boost meters during races.
 
-## Structure
+## Features
 
-| Side | File | Purpose |
-|---|---|---|
-| Client | `client/main.lua` | Data polling, NUI bridge, display updates |
+- Speed, gear and RPM
+- Rewind credit and boost meters
 
-## NUI
+## Requirements
 
-Vite · Preact · TypeScript on the [spz-ui](../spz-ui/README.md) component set.
+| Resource | Type |
+|---|---|
+| `ox_lib` | third-party |
+| `spz-core` | SPiceZ module |
 
-```bash
-cd ui && npm install && npm run build   # → ui/dist/index.html
+## Installation
+
+Included in the [txAdmin recipe](https://github.com/SPiceZ21/spz-txrecipe). Manual install:
+
+1. Download `spz-speedometer` from GitHub (latest release, or the repository) into your `resources` folder.
+2. Add to `server.cfg`, after its requirements:
+
+```cfg
+ensure spz-speedometer
 ```
 
-## Dependencies
+## Exports
 
-`ox_lib`. Optional: `spz-physics` for simulated gear and RPM.
+| Export | Side |
+|---|---|
+| `Demo` | client |
+| `SetHidden` | client |
+| `SetRewindCredit` | client |
+| `SetSideBoost` | client |
+
+```lua
+exports["spz-speedometer"]:Demo(...)
+```
 
 ---
 
-Part of [SPiceZ-Core](../README.md) · GPL-3.0
+Part of **SPiceZ-Core** — [documentation](https://github.com/SPiceZ21/Docs) · [all modules](https://github.com/SPiceZ21/Docs/blob/main/modules/README.md)

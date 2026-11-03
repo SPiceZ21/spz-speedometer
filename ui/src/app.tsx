@@ -144,11 +144,12 @@ const RED_ZONE = arcPath(CX, CY, TRACK_R, scaleDeg(RED_FROM), scaleDeg(RED_TO))
 // Inward-only glow: a strip just inside the band, painted with a radial
 // gradient centred on the dial so it is brightest against the band's inner
 // edge and fades to nothing toward the centre. A drop-shadow would bleed out
-// past the band as well.
-const GLOW_W = 6
+// past the band as well. 20 deep: a tall fade that trails the needle down
+// toward the numbers rather than a thin rim along the band.
+const GLOW_W = 20
 const GLOW_R = T_IN - GLOW_W / 2
 const GLOW_FROM = (T_IN - GLOW_W) / T_IN
-const GLOW_MID = 1 - (1 - GLOW_FROM) * 0.35
+const GLOW_MID = 1 - (1 - GLOW_FROM) * 0.45
 const GLOW_TRACK = arcPath(CX, CY, GLOW_R, SWEEP_START, SWEEP_END)
 const GLOW_RED = arcPath(CX, CY, GLOW_R, scaleDeg(RED_FROM), scaleDeg(RED_TO))
 const RW_STEP = (RW_END - RW_START) / RW_ARC_SEGS

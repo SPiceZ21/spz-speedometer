@@ -114,7 +114,7 @@ const NUM_R = 60
 const TICK_REACH = 7
 const NEEDLE_LEN = TRACK_R - TRACK_W / 2 - TICK_REACH + 1
 // Left arc: the per-lap rewind allowance, drained bottom-up as it is spent.
-const RW_R = 128, RW_START = -122, RW_END = -56, RW_ARC_SEGS = 4
+const RW_R = 106, RW_START = -122, RW_END = -56, RW_ARC_SEGS = 4
 const RED_FROM = 7.2, RED_TO = 10
 
 // Static geometry — built once at load, not on every telemetry tick.

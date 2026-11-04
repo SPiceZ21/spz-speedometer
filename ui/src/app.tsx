@@ -141,16 +141,21 @@ const NUMS = Array.from({ length: 11 }, (_, i) => pt(CX, CY, NUM_R, scaleDeg(i))
 const TRACK = arcPath(CX, CY, TRACK_R, SWEEP_START, SWEEP_END)
 const RED_ZONE = arcPath(CX, CY, TRACK_R, scaleDeg(RED_FROM), scaleDeg(RED_TO))
 
-// Inward-only glow: a strip just inside the band, painted with a radial
-// gradient centred on the dial so it is brightest against the band's inner
-// edge and fades to nothing toward the centre. A drop-shadow would bleed out
-// past the band as well. 20 deep: a tall fade that trails the needle down
-// toward the numbers rather than a thin rim along the band.
+// Glow behind the needle: a strip just inside the band, 20 deep so it trails
+// the needle down toward the numbers. The rev glow fades along the arc (slices
+// below); the static redline glow keeps the radial, band-to-centre fade.
 const GLOW_W = 20
 const GLOW_R = T_IN - GLOW_W / 2
 const GLOW_FROM = (T_IN - GLOW_W) / T_IN
 const GLOW_MID = 1 - (1 - GLOW_FROM) * 0.45
-const GLOW_TRACK = arcPath(CX, CY, GLOW_R, SWEEP_START, SWEEP_END)
+// The fade runs ALONG the arc: transparent at 0, brightest at the needle. One
+// gradient cannot follow a curve, so the strip is cut into thin slices whose
+// opacity is set every frame from where the needle is (see the frame loop).
+const GLOW_SEGS = 60
+const GLOW_STEP = (SWEEP_END - SWEEP_START) / GLOW_SEGS
+const GLOW_SEG_PATHS = Array.from({ length: GLOW_SEGS }, (_, i) =>
+  arcPath(CX, CY, GLOW_R, SWEEP_START + i * GLOW_STEP, SWEEP_START + (i + 1) * GLOW_STEP + 0.15))
+const GLOW_PEAK = 0.55      // opacity at the needle
 const GLOW_RED = arcPath(CX, CY, GLOW_R, scaleDeg(RED_FROM), scaleDeg(RED_TO))
 const RW_STEP = (RW_END - RW_START) / RW_ARC_SEGS
 const RW_SEG_PATHS = Array.from({ length: RW_ARC_SEGS }, (_, i) =>
@@ -314,7 +319,8 @@ export function App() {
 
   const needleEl = useRef<SVGGElement | null>(null)
   const fillEl   = useRef<SVGPathElement | null>(null)
-  const glowEl   = useRef<SVGPathElement | null>(null)
+  const glowEls  = useRef<(SVGPathElement | null)[]>([])
+  const glowOp   = useRef<number[]>([])           // last written opacity per slice
   const speedEl  = useRef<SVGTextElement | null>(null)
   const bandEls  = useRef<(SVGPathElement | null)[]>([])
   const tickEls  = useRef<(SVGLineElement | null)[]>([])
@@ -459,7 +465,18 @@ export function App() {
 
       const dash = `${rev.toFixed(4)} 1`
       if (fillEl.current) fillEl.current.style.strokeDasharray = dash
-      if (glowEl.current) glowEl.current.style.strokeDasharray = dash
+
+      // Glow along the arc: slice i (of those up to the needle) at
+      // PEAK * (i / lit)^1.8, so it builds from nothing at 0 to full at the
+      // needle; the slice the needle is inside is cut to the part reached.
+      const glowLit = rev * GLOW_SEGS
+      for (let i = 0; i < GLOW_SEGS; i++) {
+        const el = glowEls.current[i]
+        if (!el) continue
+        const cover = Math.max(0, Math.min(1, glowLit - i))
+        const op = cover > 0 ? +(GLOW_PEAK * Math.pow((i + 1) / Math.max(glowLit, 1), 1.8) * cover).toFixed(3) : 0
+        if (glowOp.current[i] !== op) { glowOp.current[i] = op; el.style.opacity = String(op) }
+      }
 
       if (speedEl.current) {
         const v = String(Math.round(s.speed))
@@ -600,7 +617,11 @@ export function App() {
           {/* Always mounted, driven by strokeDasharray — mounting and unmounting
               these at a rev threshold was a re-render on the busiest value on
               the dial. A dasharray of 0 draws nothing. */}
-          <path class="rev-glow" ref={glowEl} d={GLOW_TRACK} stroke="url(#spz-glow-w)" stroke-width={GLOW_W} pathLength={1} style={{ strokeDasharray: '0 1' }} />
+          <g class="rev-glow">
+            {GLOW_SEG_PATHS.map((d, i) => (
+              <path key={i} ref={el => { glowEls.current[i] = el }} d={d} stroke-width={GLOW_W} style={{ opacity: 0 }} />
+            ))}
+          </g>
           <path class="rev-fill" ref={fillEl} d={TRACK} stroke-width={TRACK_W} pathLength={1} style={{ strokeDasharray: '0 1' }} />
           <path class="red-glow" d={GLOW_RED} stroke="url(#spz-glow-r)" stroke-width={GLOW_W} />
           <path class="red-zone" d={RED_ZONE} stroke-width={TRACK_W} />

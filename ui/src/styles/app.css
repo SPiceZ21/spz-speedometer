@@ -137,6 +137,7 @@
 .red-zone,
 .red-glow { fill: none; }
 .rev-track { stroke: rgba(8, 10, 14, 0.7); }
+.rev-glow path { stroke: #fff; }
 
 .ticks-minor line { stroke: rgba(255, 255, 255, 0.38); stroke-width: 1.1; }
 .ticks-major line {

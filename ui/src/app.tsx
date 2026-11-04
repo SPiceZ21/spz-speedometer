@@ -143,7 +143,8 @@ const RED_ZONE = arcPath(CX, CY, TRACK_R, scaleDeg(RED_FROM), scaleDeg(RED_TO))
 
 // Glow behind the needle: a strip just inside the band, 20 deep so it trails
 // the needle down toward the numbers. The rev glow fades along the arc (slices
-// below); the static redline glow keeps the radial, band-to-centre fade.
+// below). Slices inside the redline are red, so red only shows once the
+// needle has reached it.
 const GLOW_W = 20
 const GLOW_R = T_IN - GLOW_W / 2
 const GLOW_FROM = (T_IN - GLOW_W) / T_IN
@@ -156,7 +157,6 @@ const GLOW_STEP = (SWEEP_END - SWEEP_START) / GLOW_SEGS
 const GLOW_SEG_PATHS = Array.from({ length: GLOW_SEGS }, (_, i) =>
   arcPath(CX, CY, GLOW_R, SWEEP_START + i * GLOW_STEP, SWEEP_START + (i + 1) * GLOW_STEP + 0.15))
 const GLOW_PEAK = 0.55      // opacity at the needle
-const GLOW_RED = arcPath(CX, CY, GLOW_R, scaleDeg(RED_FROM), scaleDeg(RED_TO))
 const RW_STEP = (RW_END - RW_START) / RW_ARC_SEGS
 const RW_SEG_PATHS = Array.from({ length: RW_ARC_SEGS }, (_, i) =>
   arcPath(CX, CY, RW_R, RW_START + i * RW_STEP + 0.8, RW_START + (i + 1) * RW_STEP - 0.8))
@@ -451,7 +451,7 @@ export function App() {
 
       needle.style.transform = `rotate(${scaleDeg(rev * 10).toFixed(2)}deg)`
 
-      // Scale numbers swell (up to 1.6x) and brighten as the needle nears
+      // Scale numbers swell (up to 1.3x) and brighten as the needle nears
       // them, then shrink back as it passes: a smooth falloff over ~1.3 units.
       const pos = rev * 10
       for (let i = 0; i <= 10; i++) {
@@ -459,7 +459,7 @@ export function App() {
         if (!el) continue
         const near = Math.max(0, 1 - Math.abs(pos - i) / 1.3)
         const k = near * near * (3 - 2 * near)            // smoothstep
-        el.style.transform = `scale(${(1 + 0.6 * k).toFixed(3)})`
+        el.style.transform = `scale(${(1 + 0.3 * k).toFixed(3)})`
         el.style.opacity = (0.55 + 0.45 * k).toFixed(3)
       }
 
@@ -619,11 +619,11 @@ export function App() {
               the dial. A dasharray of 0 draws nothing. */}
           <g class="rev-glow">
             {GLOW_SEG_PATHS.map((d, i) => (
-              <path key={i} ref={el => { glowEls.current[i] = el }} d={d} stroke-width={GLOW_W} style={{ opacity: 0 }} />
+              <path key={i} ref={el => { glowEls.current[i] = el }} d={d} stroke-width={GLOW_W} style={{ opacity: 0 }}
+                data-red={((i + 0.5) / GLOW_SEGS) * 10 >= RED_FROM ? 'true' : undefined} />
             ))}
           </g>
           <path class="rev-fill" ref={fillEl} d={TRACK} stroke-width={TRACK_W} pathLength={1} style={{ strokeDasharray: '0 1' }} />
-          <path class="red-glow" d={GLOW_RED} stroke="url(#spz-glow-r)" stroke-width={GLOW_W} />
           <path class="red-zone" d={RED_ZONE} stroke-width={TRACK_W} />
           <g class="ticks-major">
             {MAJOR_TICKS.map(t => (

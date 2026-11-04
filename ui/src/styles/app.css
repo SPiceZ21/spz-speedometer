@@ -138,6 +138,7 @@
 .red-glow { fill: none; }
 .rev-track { stroke: rgba(8, 10, 14, 0.7); }
 .rev-glow path { stroke: #fff; }
+.rev-glow path[data-red="true"] { stroke: #ff4d4d; }
 
 .ticks-minor line { stroke: rgba(255, 255, 255, 0.38); stroke-width: 1.1; }
 .ticks-major line {
@@ -188,7 +189,7 @@
 .nums text {
   font-family: var(--font-primary);
   font-weight: 800;
-  font-size: 13px;
+  font-size: 10px;
   fill: #fff;
   text-anchor: middle;
   dominant-baseline: central;
